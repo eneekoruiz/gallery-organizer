@@ -23,8 +23,11 @@ with app.app_context():
     t1 = time.time()
     print(f"Gallery built in {t1 - t0:.2f} seconds!")
     
+    with open(BASE_DIR / 'gallery_cache.json', 'r', encoding='utf-8') as f:
+        gal_data = json.load(f)
+
     # Print key statistics
-    por_org = gallery.get("📋 Revisión / Por Organizar", {})
+    por_org = gal_data.get("📋 Revisión / Por Organizar", {})
     print("\n--- 📋 Revisión / Por Organizar ---")
-    for k, v in por_org.items():
+    for k, v in list(por_org.items())[:10]:
         print(f"  {k}: {len(v)} elements")

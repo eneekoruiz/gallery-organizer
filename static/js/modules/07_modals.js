@@ -2587,6 +2587,7 @@ window.executeQuickMerge = function(source, target, targetCat) {
             alert(`✓ Fusionado con éxito en ${target}`);
         }
 
+        window._avatarCacheBust = Date.now();
         const av = document.getElementById('gallery-avatar');
         if (av) {
             av.src = `/api/person_avatar?cat=${encodeURIComponent(targetCat || 'Conocidos')}&ident=${encodeURIComponent(target)}&t=${Date.now()}`;
@@ -2604,6 +2605,8 @@ window.executeQuickMerge = function(source, target, targetCat) {
         }
         if (typeof renderGrid === 'function') {
             await renderGrid(targetCat || 'Conocidos', target);
+        } else if (typeof window.loadGalleryData === 'function') {
+            await window.loadGalleryData();
         } else if (typeof loadAlbumsHome === 'function') {
             loadAlbumsHome();
         }

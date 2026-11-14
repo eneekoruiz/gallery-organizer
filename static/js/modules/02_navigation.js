@@ -815,7 +815,8 @@ async function filterTimeline(year) {
 
                     avatarImg.loading = 'lazy';
 
-                    avatarImg.src = `/api/person_avatar?cat=${encodeURIComponent(cat)}&ident=${encodeURIComponent(ident)}`;
+                    const avBust = window._avatarCacheBust ? `&t=${window._avatarCacheBust}` : '';
+                    avatarImg.src = `/api/person_avatar?cat=${encodeURIComponent(cat)}&ident=${encodeURIComponent(ident)}${avBust}`;
 
                     avatarImg.style.cssText = 'width:24px; height:24px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#2c2c2e;';
 

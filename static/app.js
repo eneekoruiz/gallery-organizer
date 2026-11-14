@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * SmartGallery AI - Production Modular Bundle (Clean Code Architecture)
- * Generated: 2026-11-11 09:03:57
+ * Generated: 2026-11-14 20:50:54
  * Architecture: Decoupled Modules in static/js/modules/
  * ====================================================================
  */
@@ -1335,7 +1335,8 @@ async function filterTimeline(year) {
 
                     avatarImg.loading = 'lazy';
 
-                    avatarImg.src = `/api/person_avatar?cat=${encodeURIComponent(cat)}&ident=${encodeURIComponent(ident)}`;
+                    const avBust = window._avatarCacheBust ? `&t=${window._avatarCacheBust}` : '';
+                    avatarImg.src = `/api/person_avatar?cat=${encodeURIComponent(cat)}&ident=${encodeURIComponent(ident)}${avBust}`;
 
                     avatarImg.style.cssText = 'width:24px; height:24px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#2c2c2e;';
 
@@ -9089,6 +9090,7 @@ window.executeQuickMerge = function(source, target, targetCat) {
             alert(`✓ Fusionado con éxito en ${target}`);
         }
 
+        window._avatarCacheBust = Date.now();
         const av = document.getElementById('gallery-avatar');
         if (av) {
             av.src = `/api/person_avatar?cat=${encodeURIComponent(targetCat || 'Conocidos')}&ident=${encodeURIComponent(target)}&t=${Date.now()}`;
@@ -9106,6 +9108,8 @@ window.executeQuickMerge = function(source, target, targetCat) {
         }
         if (typeof renderGrid === 'function') {
             await renderGrid(targetCat || 'Conocidos', target);
+        } else if (typeof window.loadGalleryData === 'function') {
+            await window.loadGalleryData();
         } else if (typeof loadAlbumsHome === 'function') {
             loadAlbumsHome();
         }
