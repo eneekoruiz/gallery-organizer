@@ -138,3 +138,110 @@ def cluster_faces_upcac(
         final_labels.append(root_map[root])
 
     return np.array(final_labels, dtype=int)
+
+
+def consolidate_new_persons_upcac(db: dict, known_centroids: dict = None) -> dict:
+    """Consolida automáticamente todas las 'Personas Nuevas' en la base de datos:
+    1. Si algún rostro coincide con una identidad conocida (>= 0.63), lo reasigna.
+    2. Agrupa los rostros desconocidos restantes mediante UP-CAC en grupos cohesivos.
+    3. Minimiza carpetas unitarias de 1 sola foto.
+    """
+    if known_centroids is None:
+        try:
+            import pickle
+            from pathlib import Path
+            cache_p = Path(__file__).resolve().parent.parent.parent / "centroids.pkl"
+            if cache_p.exists():
+                with open(cache_p, "rb") as f:
+                    known_centroids = pickle.load(f)
+        except Exception:
+            known_centroids = {}
+
+    c_keys = []
+    c_matrix = []
+    if known_centroids:
+        for k, v in known_centroids.items():
+            k_name = k[1] if isinstance(k, tuple) else str(k)
+            if not k_name.startswith("Persona Nueva") and "Desconocid" not in k_name:
+                c_keys.append(k_name)
+                norm_v = np.array(v, dtype=np.float32).flatten()
+                norm_v = norm_v / (np.linalg.norm(norm_v) + 1e-10)
+                c_matrix.append(norm_v)
+
+    c_matrix = np.array(c_matrix) if c_matrix else None
+
+    reassigned_to_known = 0
+    unknown_paths = []
+    unknown_vectors = []
+
+    for path, info in db.items():
+        ident = str(info.get("identity", ""))
+        cat = str(info.get("category", ""))
+        if "Persona Nueva" in ident or cat == "Personas Nuevas":
+            faces = info.get("faces", [])
+            matched = False
+            best_match = None
+
+            for face in faces:
+                feat = face.get("feature")
+                if feat is not None:
+                    vec = np.array(feat, dtype=np.float32).flatten()
+                    norm = np.linalg.norm(vec)
+                    if norm > 1e-6:
+                        vec = vec / norm
+                        if c_matrix is not None and len(c_keys) > 0:
+                            sims = np.dot(c_matrix, vec)
+                            top_idx = int(np.argmax(sims))
+                            top_sim = float(sims[top_idx])
+                            top_ident = c_keys[top_idx]
+                            if top_sim >= 0.63:
+                                matched = True
+                                best_match = (top_ident, top_sim, face)
+                                break
+                            elif not best_match or top_sim > best_match[1]:
+                                best_match = (top_ident, top_sim, face)
+
+            if matched and best_match:
+                top_ident, top_sim, face = best_match
+                info["identity"] = top_ident
+                dest_cat = "Familia" if top_ident.startswith(("F.", "F ")) else ("YO" if top_ident == "YO" else "Conocidos")
+                info["category"] = dest_cat
+                info["status"] = "Clasificado"
+                info["is_dudoso"] = False
+                info["review_required"] = False
+                face["identity"] = top_ident
+                face["category"] = dest_cat
+                reassigned_to_known += 1
+            elif best_match and best_match[2].get("feature") is not None:
+                feat = best_match[2].get("feature")
+                v = np.array(feat, dtype=np.float32).flatten()
+                v = v / (np.linalg.norm(v) + 1e-10)
+                unknown_paths.append(path)
+                unknown_vectors.append(v)
+
+    clusters_count = 0
+    if len(unknown_vectors) > 1:
+        X = np.array(unknown_vectors)
+        labels = cluster_faces_upcac(X, dt1=0.38, merge_sim=0.62, margin=0.08, reciprocal=True)
+        cluster_map = {}
+        curr_id = 1
+        for lab in labels:
+            if lab not in cluster_map:
+                cluster_map[lab] = f"👤 Persona Nueva #{curr_id}"
+                curr_id += 1
+
+        clusters_count = len(cluster_map)
+        for path, lab in zip(unknown_paths, labels):
+            new_name = cluster_map[lab]
+            db[path]["identity"] = new_name
+            db[path]["category"] = "Personas Nuevas"
+            db[path]["status"] = "Clasificado"
+            for f in db[path].get("faces", []):
+                f["identity"] = new_name
+                f["category"] = "Personas Nuevas"
+
+    return {
+        "reassigned_to_known": reassigned_to_known,
+        "consolidated_unknowns": len(unknown_paths),
+        "cohesive_groups": clusters_count
+    }

@@ -471,7 +471,7 @@ def _run_icloud_worker(batch_size=None):
                                         new_person_sim = sim
                                         matched_new_person = id_tup
 
-                            if matched_new_person and new_person_sim >= 0.66:
+                            if matched_new_person and new_person_sim >= 0.60:
                                 face_identity = matched_new_person[1]
                                 face_confidence = round(new_person_sim * 100, 1)
                                 if new_person_sim > best_photo_match_sim:
@@ -596,6 +596,18 @@ def _run_icloud_worker(batch_size=None):
         except Exception as e:
             with _SYNC_LOCK:
                 _SYNC_STATE["last_error"] = f"Error en {fname}: {e}"
+
+    # Auto-consolidación UP-CAC continua para evitar carpetas unitarias de 1 foto
+    try:
+        from app.utils.clustering import consolidate_new_persons_upcac
+        res_upcac = consolidate_new_persons_upcac(apple_db, centroids)
+        if res_upcac.get("reassigned_to_known", 0) > 0 or res_upcac.get("cohesive_groups", 0) > 0:
+            logging.getLogger(__name__).info(
+                "UP-CAC Sync: %d fotos rescatadas a conocidos, agrupadas en %d grupos cohesivos.",
+                res_upcac["reassigned_to_known"], res_upcac["cohesive_groups"]
+            )
+    except Exception as e_upcac:
+        logging.getLogger(__name__).warning("Aviso en UP-CAC auto-consolidación: %s", e_upcac)
 
     # Guardado final
     save_new_centroids()

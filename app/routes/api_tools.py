@@ -17,6 +17,18 @@ def api_purge_exact_duplicates_route():
 def start_recluster_endpoint_route():
     return start_recluster_endpoint()
 
+
+@api_tools_bp.route('/consolidate_new_persons', methods=['POST'])
+def api_consolidate_new_persons_route():
+    from app.services.apple_service import load_apple_db, save_apple_db
+    from app.utils.clustering import consolidate_new_persons_upcac
+    from app.globals import set_gallery_cache
+    db = load_apple_db()
+    res = consolidate_new_persons_upcac(db)
+    save_apple_db()
+    set_gallery_cache(None)
+    return jsonify({'success': True, 'details': res})
+
 @api_tools_bp.route('/start_smart_clean', methods=['POST'])
 def start_smart_clean_endpoint_route():
     return start_smart_clean_endpoint()
