@@ -5,13 +5,7 @@ from pathlib import Path
 import shutil
 import json
 
-try:
-    from sklearn.cluster import DBSCAN
-except ImportError:
-    import subprocess
-    import sys
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
-    from sklearn.cluster import DBSCAN
+from app.utils.clustering import cluster_faces_upcac
 
 APP_DIR = Path(".")
 RESULTADOS_DIR = APP_DIR / "Resultados"
@@ -79,11 +73,8 @@ def run_recluster():
     update_status("Calculando clusters (agrupaciones)...", 60)
     
     X = np.array(embeddings)
-    # Cosine distance: 1 - cosine_similarity
-    # DBSCAN eps for cosine distance typically around 0.3 to 0.4
-    clustering = DBSCAN(eps=0.35, min_samples=3, metric='cosine').fit(X)
-    
-    labels = clustering.labels_
+    # UP-CAC: Ultra-Purity Constrained Agglomerative Clustering
+    labels = cluster_faces_upcac(X, dt1=0.34, merge_sim=0.60, margin=0.10, reciprocal=True)
     
     # Find next available persona ID
     psn_dir = RESULTADOS_DIR / "Personas Sin Nombre"

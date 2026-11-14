@@ -1,7 +1,7 @@
 import os, cv2, pickle, shutil, json
 import numpy as np
 from pathlib import Path
-from sklearn.cluster import DBSCAN
+from app.utils.clustering import cluster_faces_upcac
 
 BASE_DIR = Path(r'C:\Users\User\Desktop\Galeria Eneko NO ABRIR')
 CACHE_FILE = Path("sface_cache_v7.pkl")
@@ -116,8 +116,7 @@ for idx, p in enumerate(candidate_files[:600]): # fast batch of 600 files
 
 if len(feats) > 0:
     X = np.array(feats)
-    db = DBSCAN(eps=0.35, min_samples=3, metric='cosine').fit(X)
-    labels = db.labels_
+    labels = cluster_faces_upcac(X, dt1=0.34, merge_sim=0.60, margin=0.10, reciprocal=True)
     
     unique_labels = set(labels)
     created = 0

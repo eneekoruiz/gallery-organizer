@@ -6,7 +6,7 @@ import unicodedata
 from pathlib import Path
 import cv2
 import numpy as np
-from sklearn.cluster import DBSCAN
+from app.utils.clustering import cluster_faces_upcac
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
@@ -159,15 +159,13 @@ for idx, f in enumerate(files, 1):
 
 print("\n" + "=" * 50)
 print(f"STAGE 1 FINISHED: {stats}")
-print(f"Queued for DBSCAN clustering: {len(unknown_embeddings)} unknown faces.")
+print(f"Queued for UP-CAC clustering: {len(unknown_embeddings)} unknown faces.")
 
-# 3. DBSCAN Clustering of unknown faces
+# 3. UP-CAC Clustering of unknown faces (Ultra-Purity Constrained Agglomerative Clustering)
 if len(unknown_embeddings) >= 2:
-    print("Running DBSCAN clustering on unknown faces...", flush=True)
+    print("Running UP-CAC ultra-purity clustering on unknown faces...", flush=True)
     X = np.array(unknown_embeddings)
-    # Cosine distance DBSCAN: eps=0.34 (cosine similarity >= 0.66), min_samples=2
-    clustering = DBSCAN(eps=0.34, min_samples=2, metric='cosine').fit(X)
-    labels = clustering.labels_
+    labels = cluster_faces_upcac(X, dt1=0.34, merge_sim=0.60, margin=0.10, reciprocal=True)
     
     unique_labels = set(labels) - {-1}
     print(f"Found {len(unique_labels)} recurring person clusters!", flush=True)
