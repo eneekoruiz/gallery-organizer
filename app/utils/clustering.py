@@ -10,7 +10,11 @@ Algoritmo: Ultra-Purity Constrained Agglomerative Clustering (UP-CAC)
 
 from collections import defaultdict
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering
+
+try:
+    from sklearn.cluster import AgglomerativeClustering
+except ImportError:
+    AgglomerativeClustering = None
 
 def cluster_faces_upcac(
     embeddings: np.ndarray,
@@ -53,13 +57,21 @@ def cluster_faces_upcac(
 
     # 3. Fase 1: Micro-clustering por enlace completo
     # Complete linkage exige que dist_max <= dt1 entre CUALQUIER par del cluster
-    cl1 = AgglomerativeClustering(
-        distance_threshold=dt1,
-        n_clusters=None,
-        metric='precomputed',
-        linkage='complete'
-    ).fit(dist_matrix)
-    l1 = cl1.labels_
+    if AgglomerativeClustering is not None:
+        cl1 = AgglomerativeClustering(
+            distance_threshold=dt1,
+            n_clusters=None,
+            metric='precomputed',
+            linkage='complete'
+        ).fit(dist_matrix)
+        l1 = cl1.labels_
+    else:
+        # Fallback si scikit-learn no está disponible en entornos ultraligeros
+        l1 = np.arange(n_samples)
+        for i in range(n_samples):
+            for j in range(i + 1, n_samples):
+                if dist_matrix[i, j] <= dt1:
+                    l1[j] = l1[i]
 
     # Agrupar muestras por micro-cluster
     c_map = defaultdict(list)
