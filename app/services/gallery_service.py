@@ -742,14 +742,19 @@ def get_gallery(force_reload=False):
                         add_to_gallery(cat, clean_ident, item_entry)
                     elif clean_ident and not clean_ident.startswith(('Desconocid', 'Falso_Positivo', 'Ignorar', 'Persona Nueva')):
                         # Foto sugerida por la IA de Apple Photos / iPhone para esta persona
-                        is_pend = (info.get('status') == 'Dudoso' or info.get('review_required'))
-                        if is_pend:
-                            item_entry['album_section'] = 'review'
-                            item_entry['is_dudoso'] = True
-                            item_entry['needs_confirmation'] = True
-                        else:
-                            item_entry['album_section'] = 'suggestion'
+                        if 'sin rostro' in clean_ident.lower():
+                            item_entry['album_section'] = 'official'
                             item_entry['is_dudoso'] = False
+                            item_entry['needs_confirmation'] = False
+                        else:
+                            is_pend = (info.get('status') == 'Dudoso' or info.get('review_required'))
+                            if is_pend:
+                                item_entry['album_section'] = 'review'
+                                item_entry['is_dudoso'] = True
+                                item_entry['needs_confirmation'] = True
+                            else:
+                                item_entry['album_section'] = 'suggestion'
+                                item_entry['is_dudoso'] = False
                         add_to_gallery(cat, clean_ident, item_entry)
 
                 # Add to individual person albums for each recognized face in faces_in_file

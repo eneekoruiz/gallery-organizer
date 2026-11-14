@@ -37,28 +37,29 @@ def confirmed_centroid(previous, feature):
 
 
 def compute_appearance_centroids(samples, sim_threshold=0.70, max_centroids=4):
-    """Clusters face samples of an identity into distinct appearance centroids (childhood vs adult, glasses, angles)."""
+    """Clusters face samples of an identity into distinct appearance centroids (childhood vs adult, glasses, angles) using UP-CAC."""
     if not samples:
         return []
     vectors = [normalized_feature(s) for s in samples]
     if len(vectors) <= 1:
         return [vectors[0]]
+    if len(vectors) == 2:
+        sim = float(np.dot(vectors[0], vectors[1]))
+        if sim >= sim_threshold:
+            return [normalized_feature(np.mean(vectors, axis=0))]
+        return vectors[:max_centroids]
 
-    clusters = []
-    for v in vectors:
-        matched = False
-        for cl in clusters:
-            sim = float(np.dot(v, cl['center']))
-            if sim >= sim_threshold:
-                cl['members'].append(v)
-                cl['center'] = normalized_feature(np.mean(cl['members'], axis=0))
-                matched = True
-                break
-        if not matched:
-            clusters.append({'center': v, 'members': [v]})
-
-    clusters.sort(key=lambda c: len(c['members']), reverse=True)
-    return [cl['center'] for cl in clusters[:max_centroids]]
+    try:
+        from app.utils.clustering import cluster_faces_upcac
+        from collections import defaultdict
+        labels = cluster_faces_upcac(np.array(vectors), dt1=0.32, merge_sim=0.62, margin=0.10)
+        clusters = defaultdict(list)
+        for idx, lbl in enumerate(labels):
+            clusters[lbl].append(vectors[idx])
+        sorted_clusters = sorted(clusters.values(), key=len, reverse=True)
+        return [normalized_feature(np.mean(members, axis=0)) for members in sorted_clusters[:max_centroids]]
+    except Exception:
+        return [normalized_feature(np.mean(vectors, axis=0))]
 
 
 def update_confirmed_sample(identities, identity, sample_key, feature):
@@ -80,10 +81,11 @@ def update_confirmed_sample(identities, identity, sample_key, feature):
     samples = dict(record.get('confirmed_samples', {}))
     samples[sample_key] = feature
     sample_list = list(samples.values())
-    appearance_centers = [c for c in compute_appearance_centroids(sample_list) if float(np.dot(c, feature)) < 0.95][:3]
+    ensemble_centroid = normalized_feature(np.mean(sample_list, axis=0))
+    appearance_centers = [c for c in compute_appearance_centroids(sample_list) if float(np.dot(c, ensemble_centroid)) < 0.95][:3]
     result[identity] = {
-        'centroid': feature,
-        'centroids': [feature] + appearance_centers,
+        'centroid': ensemble_centroid,
+        'centroids': [ensemble_centroid] + appearance_centers,
         'confirmed_samples': samples,
         'provenance': HUMAN,
         'names': list(samples)
