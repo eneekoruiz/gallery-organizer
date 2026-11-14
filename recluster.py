@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 import json
 
-from app.utils.clustering import cluster_faces_upcac
+from app.utils.clustering import cluster_faces_upcac, cluster_faces_consensus_upcac
 
 APP_DIR = Path(".")
 RESULTADOS_DIR = APP_DIR / "Resultados"
@@ -73,8 +73,8 @@ def run_recluster():
     update_status("Calculando clusters (agrupaciones)...", 60)
     
     X = np.array(embeddings)
-    # UP-CAC: Ultra-Purity Constrained Agglomerative Clustering
-    labels = cluster_faces_upcac(X, dt1=0.34, merge_sim=0.60, margin=0.10, reciprocal=True)
+    # Consensus Multi-Resolution UP-CAC con restricción física Cannot-Link
+    labels = cluster_faces_consensus_upcac(X, photo_ids=valid_files, vote_threshold=0.80)
     
     # Find next available persona ID
     psn_dir = RESULTADOS_DIR / "Personas Sin Nombre"
