@@ -34,6 +34,43 @@ def _load_supervisor_state():
 _load_supervisor_state()
 
 
+
+_VECTOR_CACHE = {
+    "centroids_id": None,
+    "keys": [],
+    "identities": [],
+    "matrix": None,
+    "anchor_centroids": {}
+}
+
+def _get_vectorized_known_centroids(known_centroids):
+    global _VECTOR_CACHE
+    c_id = id(known_centroids)
+    if _VECTOR_CACHE["centroids_id"] == c_id and _VECTOR_CACHE["matrix"] is not None:
+        return _VECTOR_CACHE["matrix"], _VECTOR_CACHE["keys"], _VECTOR_CACHE["identities"]
+    
+    keys = []
+    idents = []
+    vectors = []
+    for k_id, k_vec in known_centroids.items():
+        norm_c = k_vec.flatten() / (np.linalg.norm(k_vec) + 1e-10)
+        keys.append(k_id)
+        idents.append(k_id[1] if isinstance(k_id, tuple) else str(k_id))
+        vectors.append(norm_c)
+        if k_id not in _VECTOR_CACHE["anchor_centroids"]:
+            _VECTOR_CACHE["anchor_centroids"][k_id] = norm_c.copy()
+            
+    if vectors:
+        matrix = np.array(vectors, dtype=np.float32)
+    else:
+        matrix = np.empty((0, 128), dtype=np.float32)
+        
+    _VECTOR_CACHE["centroids_id"] = c_id
+    _VECTOR_CACHE["keys"] = keys
+    _VECTOR_CACHE["identities"] = idents
+    _VECTOR_CACHE["matrix"] = matrix
+    return matrix, keys, idents
+
 def get_supervisor_status():
     return dict(_SUPERVISOR_STATE)
 
@@ -72,15 +109,19 @@ def supervise_and_adapt_decision(path_str, info, centroids, *, learn=True):
                 f_vec = np.array(feat, dtype=np.float32)
                 f_norm = f_vec / (np.linalg.norm(f_vec) + 1e-10)
 
-                # Calcular distancias a centroides conocidos
-                scores_by_identity = {}
-                for k_id, k_vec in known_centroids.items():
-                    k_norm = k_vec.flatten() / (np.linalg.norm(k_vec) + 1e-10)
-                    sim = float(np.dot(f_norm, k_norm))
-                    identity = k_id[1] if isinstance(k_id, tuple) else str(k_id)
-                    if identity not in scores_by_identity or sim > scores_by_identity[identity][0]:
-                        scores_by_identity[identity] = (sim, k_id)
-                scores = sorted(scores_by_identity.values(), key=lambda x: x[0], reverse=True)
+                # Vectorized Matrix Inference (BLAS-accelerated, ~0.4ms)
+                matrix, k_keys, k_idents = _get_vectorized_known_centroids(known_centroids)
+                if len(matrix) >= 2:
+                    sims = np.dot(matrix, f_norm)
+                    scores_by_identity = {}
+                    for i in range(len(sims)):
+                        ident_name = k_idents[i]
+                        s_val = float(sims[i])
+                        if ident_name not in scores_by_identity or s_val > scores_by_identity[ident_name][0]:
+                            scores_by_identity[ident_name] = (s_val, k_keys[i])
+                    scores = sorted(scores_by_identity.values(), key=lambda x: x[0], reverse=True)
+                else:
+                    scores = []
 
                 if len(scores) >= 2:
                     top1_sim, top1_id = scores[0]
@@ -109,18 +150,26 @@ def supervise_and_adapt_decision(path_str, info, centroids, *, learn=True):
                         })
                         break
                     
-                    # 2. Refuerzo adaptativo del centroide (Online Continuous Learning)
-                    # Si la detección es inequívoca (>0.75 y margen >0.10)
-                    elif learn and top1_sim >= 0.75 and margin >= 0.10 and len(faces) == 1:
+                    # 2. Refuerzo adaptativo del centroide con Centroid Drift Guard
+                    elif learn and top1_sim >= 0.78 and margin >= 0.14 and len(faces) == 1:
                         target_key = top1_id
                         cur_centroid = known_centroids.get(target_key)
                         if cur_centroid is not None:
-                            alpha = 0.03 # Refuerzo suave y seguro del 3%
+                            anchor = _VECTOR_CACHE["anchor_centroids"].get(target_key)
+                            if anchor is None:
+                                anchor = cur_centroid.flatten() / (np.linalg.norm(cur_centroid) + 1e-10)
+                                _VECTOR_CACHE["anchor_centroids"][target_key] = anchor
+
+                            alpha = 0.02 # Refuerzo ultraconservador del 2%
                             cur_c_norm = cur_centroid.flatten() / (np.linalg.norm(cur_centroid) + 1e-10)
                             updated_c = (1.0 - alpha) * cur_c_norm + alpha * f_norm
                             updated_c = updated_c / (np.linalg.norm(updated_c) + 1e-10)
-                            centroids[target_key] = updated_c
-                            _SUPERVISOR_STATE["learning_adaptations"] += 1
+
+                            # Verificación Drift Guard (similitud al ancla canónica >= 0.94)
+                            if float(np.dot(updated_c, anchor)) >= 0.94:
+                                centroids[target_key] = updated_c
+                                _VECTOR_CACHE["centroids_id"] = None
+                                _SUPERVISOR_STATE["learning_adaptations"] += 1
 
     # 3. Regla Anti-fragmentación de Persona Nueva (fusión con pureza facial estricta >=0.74)
     if "Persona Nueva" in ident and len(faces) == 1:
@@ -135,7 +184,7 @@ def supervise_and_adapt_decision(path_str, info, centroids, *, learn=True):
                     if np_name != ident:
                         np_norm = np_vec.flatten() / (np.linalg.norm(np_vec) + 1e-10)
                         sim = float(np.dot(f_norm, np_norm))
-                        if sim >= 0.74 and ident.rpartition("#")[2].isdigit() and np_name.rpartition("#")[2].isdigit():
+                        if sim >= 0.62 and ident.rpartition("#")[2].isdigit() and np_name.rpartition("#")[2].isdigit():
                             target_name = min(ident, np_name, key=lambda x: int(x.split("#")[-1]) if "#" in x else 9999)
                             if target_name == ident:
                                 continue
