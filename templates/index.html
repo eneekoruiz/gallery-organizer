@@ -6,27 +6,27 @@
     {% include 'components/lightbox.html' %}
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
-    <!-- Library Loading Overlay -->
+    <!-- Library Loading Overlay (Ultra-Fast 0.3s Dismissal) -->
     <style>
         @keyframes pulse-avatar { 0%,100% { transform: scale(1); opacity:0.9; } 50% { transform: scale(1.15); opacity:1; } }
         @keyframes shimmer-bar { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes fade-in-up { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes autoDismissOverlay { 0%, 70% { opacity:1; visibility:visible; } 95% { opacity:0; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
+        @keyframes autoDismissOverlay { 0%, 50% { opacity:1; visibility:visible; } 90% { opacity:0; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
     </style>
-    <div id="library-loading-overlay" onclick="this.style.display='none';" style="display:flex; opacity:1; visibility:visible; position:fixed; inset:0; background:radial-gradient(ellipse at center, #12131a 0%, #0c0d12 70%); z-index:99999; flex-direction:column; align-items:center; justify-content:center; color:white; transition:opacity 0.35s ease, visibility 0.35s ease; animation: autoDismissOverlay 2.2s forwards ease;">
-        <div style="text-align:center; max-width:420px; padding:20px; animation: fade-in-up 0.6s ease;">
-            <div style="font-size:3.5rem; margin-bottom:22px; animation: pulse-avatar 2s infinite ease-in-out; filter:drop-shadow(0 0 20px rgba(168,85,247,0.4));">🔮</div>
+    <div id="library-loading-overlay" onclick="this.style.display='none';" style="display:flex; opacity:1; visibility:visible; position:fixed; inset:0; background:radial-gradient(ellipse at center, #12131a 0%, #0c0d12 70%); z-index:99999; flex-direction:column; align-items:center; justify-content:center; color:white; transition:opacity 0.25s ease, visibility 0.25s ease; animation: autoDismissOverlay 0.6s forwards ease;">
+        <div style="text-align:center; max-width:420px; padding:20px; animation: fade-in-up 0.4s ease;">
+            <div style="font-size:3.5rem; margin-bottom:22px; animation: pulse-avatar 1.5s infinite ease-in-out; filter:drop-shadow(0 0 20px rgba(168,85,247,0.4));">🔮</div>
             <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:6px; background:linear-gradient(135deg, #a855f7, #3b82f6, #06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-size:200% auto;">Cargando Galería Inteligente</h2>
             <p id="loading-status-text" style="font-size:0.82rem; color:#8e8e93; margin-bottom:28px; line-height:1.5;">Sincronizando fotos de la biblioteca...</p>
             
             <div style="width:300px; height:5px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; position:relative; margin:0 auto 12px auto;">
-                <div id="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #a855f7, #3b82f6, #06b6d4); border-radius:10px; transition:width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 12px rgba(168,85,247,0.5);"></div>
+                <div id="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #a855f7, #3b82f6, #06b6d4); border-radius:10px; transition:width 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 12px rgba(168,85,247,0.5);"></div>
             </div>
             <div id="loading-progress-percentage" style="font-size:12px; font-weight:700; color:rgba(168,85,247,0.9); letter-spacing:0.5px;">0%</div>
         </div>
     </div>
     <script>
-        // Failsafe auto-dismiss: jamás bloquear la pantalla más de 2 segundos
+        // Failsafe auto-dismiss: jamás bloquear la pantalla más de 0.4s
         (function() {
             var safetyTimer = setTimeout(function() {
                 var ov = document.getElementById('library-loading-overlay');
@@ -35,9 +35,9 @@
                     setTimeout(function() {
                         ov.style.visibility = 'hidden';
                         ov.style.display = 'none';
-                    }, 300);
+                    }, 200);
                 }
-            }, 2000);
+            }, 400);
             window._dismissLoadingOverlay = function() {
                 clearTimeout(safetyTimer);
                 var ov = document.getElementById('library-loading-overlay');
@@ -46,7 +46,7 @@
                     setTimeout(function() {
                         ov.style.visibility = 'hidden';
                         ov.style.display = 'none';
-                    }, 300);
+                    }, 150);
                 }
             };
         })();

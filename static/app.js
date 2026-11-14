@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * SmartGallery AI - Production Modular Bundle (Clean Code Architecture)
- * Generated: 2026-11-14 20:50:54
+ * Generated: 2026-11-14 21:58:42
  * Architecture: Decoupled Modules in static/js/modules/
  * ====================================================================
  */
@@ -1543,15 +1543,33 @@ async function filterTimeline(year) {
 
                 (slots.length < 4 ? [...slots, ...Array(4-slots.length).fill(null)] : slots.slice(0,4)).forEach(p => {
                     if (p) {
+                        const slotBox = document.createElement('div');
+                        slotBox.style.cssText = 'position:relative; width:100%; height:100%; overflow:hidden; background:#181920;';
+
+                        const skel = document.createElement('div');
+                        skel.className = 'masonry-skeleton skeleton-shimmer-box';
+                        skel.style.position = 'absolute';
+                        skel.style.inset = '0';
+                        slotBox.appendChild(skel);
+
                         const img = document.createElement('img');
-
                         img.src = `/api/thumbnail?path=${encodeURIComponent(p)}`;
-
                         img.loading = 'lazy';
+                        img.decoding = 'async';
+                        img.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.25s ease-out;';
 
-                        img.onerror = () => { img.style.background = '#2c2c2e'; img.removeAttribute('src'); };
+                        img.onload = () => {
+                            img.style.opacity = '1';
+                            skel.remove();
+                        };
+                        img.onerror = () => {
+                            skel.remove();
+                            img.style.background = '#2c2c2e';
+                            img.removeAttribute('src');
+                        };
 
-                        mosaic.appendChild(img);
+                        slotBox.appendChild(img);
+                        mosaic.appendChild(slotBox);
                     } else {
                         const ph = document.createElement('div');
 
@@ -1921,7 +1939,17 @@ async function purgeExactDuplicates() {
             if (!Array.isArray(currentVal)) {
                 const grid = document.getElementById('grid-container');
 
-                if (grid) grid.innerHTML = '<div style="padding:40px; text-align:center;"><div class="loader-small"></div><p style="color:#8e8e93; font-size:12px; margin-top:8px;">Cargando fotos del album...</p></div>';
+                if (grid) {
+                    let skelHtml = '';
+                    for (let s = 0; s < 12; s++) {
+                        skelHtml += `
+                            <div class="media-card photo-skeleton-item" style="aspect-ratio:1/1; position:relative; overflow:hidden; border-radius:10px; background:#14151a;">
+                                <div class="masonry-skeleton skeleton-shimmer-box" style="position:absolute; inset:0; animation-delay:${s * 40}ms;"></div>
+                            </div>
+                        `;
+                    }
+                    grid.innerHTML = skelHtml;
+                }
 
                 try {
                     const r = await fetch('/api/gallery?cat=' + encodeURIComponent(cat) + '&ident=' + encodeURIComponent(ident));

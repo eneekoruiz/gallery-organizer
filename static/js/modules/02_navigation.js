@@ -1023,15 +1023,33 @@ async function filterTimeline(year) {
 
                 (slots.length < 4 ? [...slots, ...Array(4-slots.length).fill(null)] : slots.slice(0,4)).forEach(p => {
                     if (p) {
+                        const slotBox = document.createElement('div');
+                        slotBox.style.cssText = 'position:relative; width:100%; height:100%; overflow:hidden; background:#181920;';
+
+                        const skel = document.createElement('div');
+                        skel.className = 'masonry-skeleton skeleton-shimmer-box';
+                        skel.style.position = 'absolute';
+                        skel.style.inset = '0';
+                        slotBox.appendChild(skel);
+
                         const img = document.createElement('img');
-
                         img.src = `/api/thumbnail?path=${encodeURIComponent(p)}`;
-
                         img.loading = 'lazy';
+                        img.decoding = 'async';
+                        img.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.25s ease-out;';
 
-                        img.onerror = () => { img.style.background = '#2c2c2e'; img.removeAttribute('src'); };
+                        img.onload = () => {
+                            img.style.opacity = '1';
+                            skel.remove();
+                        };
+                        img.onerror = () => {
+                            skel.remove();
+                            img.style.background = '#2c2c2e';
+                            img.removeAttribute('src');
+                        };
 
-                        mosaic.appendChild(img);
+                        slotBox.appendChild(img);
+                        mosaic.appendChild(slotBox);
                     } else {
                         const ph = document.createElement('div');
 

@@ -267,11 +267,33 @@
 
 
 @keyframes skeletonShimmer {
-
     0% { background-position: -200% 0; }
-
     100% { background-position: 200% 0; }
+}
 
+/* Preloader & Skeleton States */
+.home-album-card.skeleton-card {
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    background: #121318;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skeleton-shimmer-box {
+    background: linear-gradient(90deg, #16171d 0%, #252631 50%, #16171d 100%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.3s infinite ease-in-out;
+}
+
+.photo-skeleton-item {
+    aspect-ratio: 1 / 1;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #14151a;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 
