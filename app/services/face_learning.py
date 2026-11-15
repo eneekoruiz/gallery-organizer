@@ -6,8 +6,8 @@ HUMAN = 'human_confirmed'
 def normalized_feature(value):
     vector = np.asarray(value, dtype=np.float32).reshape(-1)
     norm = np.linalg.norm(vector)
-    if vector.size != 128 or not np.isfinite(vector).all() or not np.isfinite(norm) or norm <= 0:
-        raise ValueError('Invalid SFace embedding')
+    if vector.size not in (128, 512, 1024, 1536) or not np.isfinite(vector).all() or not np.isfinite(norm) or norm <= 0:
+        raise ValueError(f'Invalid embedding: size={vector.size}, norm={norm}')
     return vector / norm
 
 def face_rectangle(face):

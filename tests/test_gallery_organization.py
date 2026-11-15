@@ -253,15 +253,16 @@ class TestGalleryOrganization(unittest.TestCase):
             flask_app = create_app()
             client = flask_app.test_client()
 
-            # Second call for the same merge
-            res = client.post('/api/rename_group',
-                              data=json.dumps({
-                                  "cat": "📋 Revisión / Por Organizar",
-                                  "ident": "Persona Nueva #88",
-                                  "new_name": "YO",
-                                  "new_cat": "YO"
-                              }),
-                              content_type='application/json')
+            with patch('app.services.apple_service.rename_apple_group', return_value=0):
+                # Second call for the same merge
+                res = client.post('/api/rename_group',
+                                  data=json.dumps({
+                                      "cat": "📋 Revisión / Por Organizar",
+                                      "ident": "Persona Nueva #88",
+                                      "new_name": "YO",
+                                      "new_cat": "YO"
+                                  }),
+                                  content_type='application/json')
 
             # Must return 200 with already_merged: True, NEVER 404!
             self.assertEqual(res.status_code, 200)

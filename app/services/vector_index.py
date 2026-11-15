@@ -47,8 +47,10 @@ def init_index_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_dhash_sharpness ON media_index(dhash, sharpness);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_file_size ON media_index(file_size);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_cat_ident ON media_index(category, identity);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_identity ON media_index(identity);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_mtime ON media_index(mtime);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_faces ON media_index(faces_count);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_embedding_present ON media_index(file_path) WHERE embedding_blob IS NOT NULL;")
         conn.commit()
         conn.close()
 
@@ -80,10 +82,12 @@ class VectorIndexEngine:
         conn.close()
 
         paths, idents, vectors = [], [], []
+        dim = 128
         for r in rows:
             blob = r["embedding_blob"]
-            if blob and len(blob) == 128 * 4:
+            if blob and len(blob) in (128 * 4, 512 * 4, 1024 * 4, 1536 * 4):
                 vec = np.frombuffer(blob, dtype=np.float32)
+                dim = len(vec)
                 paths.append(r["file_path"])
                 idents.append(r["identity"])
                 vectors.append(vec)
@@ -96,7 +100,7 @@ class VectorIndexEngine:
                 self.norms = np.linalg.norm(self.matrix, axis=1)
                 self.norms[self.norms == 0] = 1e-7
             else:
-                self.matrix = np.empty((0, 128), dtype=np.float32)
+                self.matrix = np.empty((0, dim), dtype=np.float32)
                 self.norms = np.empty((0,), dtype=np.float32)
             self._loaded = True
 

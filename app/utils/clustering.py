@@ -262,6 +262,65 @@ def cluster_faces_consensus_upcac(
     return np.array(final_labels, dtype=int)
 
 
+def audit_and_split_contaminated_clusters(
+    embeddings: np.ndarray,
+    labels: np.ndarray,
+    min_cluster_size: int = 6,
+    fiedler_threshold: float = 0.10,
+    min_sim: float = 0.45
+) -> np.ndarray:
+    r"""Auditoría espectral de bimodalidad en clústeres generados.
+    Evalúa la matriz Laplaciana normalizada de cada grupo. Si el segundo autovalor más pequeño
+    (valor de Fiedler \lambda_2) es bajo y el salto espectral (\lambda_3 / \lambda_2) es alto,
+    indica que dos núcleos densos fueron erróneamente puenteados. Aplica un 2-way Normalized Cut
+    basado en el signo del vector de Fiedler para bifurcar el clúster.
+    """
+    if len(embeddings) == 0 or len(labels) == 0:
+        return labels
+
+    new_labels = np.copy(labels)
+    unique_labels = [l for l in np.unique(labels) if l >= 0]
+    next_label_id = int(np.max(labels)) + 1 if len(labels) > 0 else 0
+
+    for l in unique_labels:
+        idx = np.where(labels == l)[0]
+        if len(idx) < min_cluster_size:
+            continue
+
+        cluster_embs = embeddings[idx]
+        sim = np.dot(cluster_embs, cluster_embs.T)
+        W = np.clip(sim - min_sim, 0.0, None)
+        np.fill_diagonal(W, 0.0)
+
+        d = np.sum(W, axis=1)
+        if np.any(d <= 1e-7):
+            continue
+
+        d_inv_sqrt = 1.0 / np.sqrt(d)
+        L_sym = np.eye(len(idx)) - (W * d_inv_sqrt[:, None]) * d_inv_sqrt[None, :]
+
+        try:
+            vals, vecs = np.linalg.eigh(L_sym)
+            if len(vals) > 2 and vals[1] < fiedler_threshold and (vals[2] / max(vals[1], 1e-5)) > 2.2:
+                # Bimodalidad detectada: partición por corte espectral
+                fiedler_vec = vecs[:, 1]
+                part_split = fiedler_vec > 0
+                part1_idx = idx[part_split]
+                part2_idx = idx[~part_split]
+
+                if len(part1_idx) >= 2 and len(part2_idx) >= 2:
+                    # Asignar un nuevo identificador de cluster a la segunda partición
+                    new_labels[part2_idx] = next_label_id
+                    next_label_id += 1
+        except Exception:
+            continue
+
+    # Re-mapear etiquetas a enteros contiguos 0..K-1
+    unique_final = np.unique(new_labels)
+    label_map = {old: new for new, old in enumerate(unique_final)}
+    return np.array([label_map[l] if l >= 0 else -1 for l in new_labels], dtype=int)
+
+
 def consolidate_new_persons_upcac(db: dict, known_centroids: dict = None) -> dict:
     """Consolida automáticamente todas las 'Personas Nuevas' en la base de datos:
     1. Si algún rostro coincide con una identidad conocida (>= 0.63), lo reasigna.
@@ -346,6 +405,8 @@ def consolidate_new_persons_upcac(db: dict, known_centroids: dict = None) -> dic
         X = np.array(unknown_vectors)
         # Ensemble Consensus UP-CAC con restricción física Cannot-Link por archivo
         labels = cluster_faces_consensus_upcac(X, photo_ids=unknown_paths, vote_threshold=0.80)
+        # Auditoría Espectral Post-Clustering: detección y división de clústeres bimodales contaminados
+        labels = audit_and_split_contaminated_clusters(X, labels, min_cluster_size=6, fiedler_threshold=0.10)
         cluster_map = {}
         curr_id = 1
         for lab in labels:

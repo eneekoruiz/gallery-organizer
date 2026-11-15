@@ -136,7 +136,7 @@ from app.globals import (
 
     APP_DIR, FOTOS_DIR, RESULTADOS_DIR, CACHE_FILE, FACES_CACHE_FILE, 
 
-    PENDING_DELETIONS_FILE, detector, recognizer, known_faces, 
+    PENDING_DELETIONS_FILE, THUMBNAILS_DIR, detector, recognizer, known_faces, 
 
     faces_cache, clear_gallery_cache, get_gallery_cache,
 
@@ -2667,11 +2667,18 @@ def api_rename_group():
 
         from app.services.apple_service import rename_apple_group
 
-        apple_count = rename_apple_group(cat, ident, c_new_cat, c_new_name)
+        try:
+            raw_apple_count = rename_apple_group(cat, ident, c_new_cat, c_new_name)
+            apple_count = int(raw_apple_count) if isinstance(raw_apple_count, (int, float)) else 0
+        except Exception:
+            apple_count = 0
 
         if (c_ident != ident or c_cat != cat) and apple_count == 0:
-
-            apple_count += rename_apple_group(c_cat, c_ident, c_new_cat, c_new_name)
+            try:
+                raw_apple_count2 = rename_apple_group(c_cat, c_ident, c_new_cat, c_new_name)
+                apple_count += int(raw_apple_count2) if isinstance(raw_apple_count2, (int, float)) else 0
+            except Exception:
+                pass
 
 
 
