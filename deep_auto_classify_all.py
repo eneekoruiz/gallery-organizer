@@ -35,9 +35,20 @@ def update_status(text, progress=0, details=None):
         except Exception:
             pass
 
-# 1. Load ONNX Models
-detector = cv2.FaceDetectorYN.create("models/face_detection_yunet.onnx", "", (320, 320))
-recognizer = cv2.FaceRecognizerSF.create("models/face_recognition_sface.onnx", "")
+# 1. Load ONNX Models safely
+detector = None
+recognizer = None
+if os.path.exists("models/face_detection_yunet.onnx"):
+    try:
+        detector = cv2.FaceDetectorYN.create("models/face_detection_yunet.onnx", "", (320, 320))
+    except Exception as e:
+        print(f"[WARN] Error cargando YuNet: {e}")
+
+if os.path.exists("models/face_recognition_sface.onnx"):
+    try:
+        recognizer = cv2.FaceRecognizerSF.create("models/face_recognition_sface.onnx", "")
+    except Exception as e:
+        print(f"[WARN] Error cargando SFace: {e}")
 
 def get_sim(f1, f2):
     v1 = np.squeeze(f1)

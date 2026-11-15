@@ -206,13 +206,13 @@ def get_gallery(force_reload=False):
             elif "personas_de_espaldas" in abs_p_l or "de_espaldas" in abs_p_l or "de espaldas" in folder_l or "de espaldas" in subfolder_l or folder_l in ("espaldas", "personas de espaldas") or subfolder_l in ("espaldas", "personas de espaldas"):
                 cat = "📋 Revisión / Por Organizar"
                 ident = "👤 Personas de Espaldas"
-            elif "para revisar" in abs_p_l or "para organizar" in folder_l or "pendiente" in folder_l or "para organizar" in subfolder_l:
+            elif "para revisar" in abs_p_l or "para organizar" in folder_l or "pendiente" in folder_l or "para organizar" in subfolder_l or "organizar" in folder_l or "organizar" in subfolder_l or folder_l in ("revisión", "revision"):
                 cat = "📋 Revisión / Por Organizar"
                 ident = "⏳ Pendientes de Organizar"
             elif "_dudosos" in abs_p_l or "dudoso" in subfolder_l or "dudoso" in folder_l:
                 cat = "📋 Revisión / Por Organizar"
                 ident = "⚠️ Dudosos / Baja Confianza"
-            elif "sin_rostro" in abs_p_l or "sin_rostro" in folder_l or "sin_rostro" in subfolder_l:
+            elif "sin_rostro" in abs_p_l or "sin_rostro" in folder_l or "sin_rostro" in subfolder_l or folder_l == "revision_interactiva":
                 # Auditoría rigurosa: verificar si el archivo tiene caras detectadas o cacheadas
                 f_name_check = path_obj.name.lower()
                 cached_faces = overrides.get(abs_p) or faces_cache.get(abs_p) or fc_by_basename.get(f_name_check, [])
@@ -224,6 +224,9 @@ def get_gallery(force_reload=False):
                         if 'espalda' in target_id.lower():
                             cat = "📋 Revisión / Por Organizar"
                             ident = "👤 Personas de Espaldas"
+                        elif target_id.startswith('Persona Nueva') or 'persona nueva' in target_id.lower() or 'persona #' in target_id.lower():
+                            cat = "Personas Sin Nombre"
+                            ident = target_id.replace('👤', '').strip()
                         else:
                             ident = target_id
                             cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
@@ -238,12 +241,15 @@ def get_gallery(force_reload=False):
                     cat = "📋 Revisión / Por Organizar"
                     ident = "🎬 Vídeos Sin Rostro" if ext in [".mp4", ".mov", ".avi"] else "📷 Fotos Sin Rostro"
                     is_dudoso = False
-            elif folder == "Personas Sin Nombre" or "desconocid" in folder_l or "desconocid" in subfolder_l:
-                cat = "📋 Revisión / Por Organizar"
+            elif folder == "Personas Sin Nombre" or "persona nueva" in folder_l or "persona nueva" in subfolder_l or "persona #" in subfolder_l:
+                cat = "Personas Sin Nombre"
                 if "persona nueva" in subfolder_l or "persona #" in subfolder_l:
-                    ident = f"👤 {subfolder}"
+                    ident = subfolder.replace('👤', '').strip()
                 else:
                     ident = "❓ Desconocidos (Por Identificar)"
+            elif "desconocid" in folder_l or "desconocid" in subfolder_l:
+                cat = "📋 Revisión / Por Organizar"
+                ident = "❓ Desconocidos (Por Identificar)"
             elif folder == "YO" or subfolder == "YO":
                 cat, ident = "YO", "YO"
             else:
@@ -537,19 +543,27 @@ def get_gallery(force_reload=False):
                     valid_ids = [f.get('identity') for f in item_faces if f.get('identity') and not str(f.get('identity')).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar'))]
                 if valid_ids:
                     target = valid_ids[0]
-                    ident = f"👤 {target}" if target.startswith('Persona Nueva') else target
-                    cat = ident_to_cat_map.get(target) or ('Conocidos' if target.startswith(('C.', 'C ')) else 'Familia' if target.startswith(('F.', 'F ')) else 'YO' if target == 'YO' else 'Profesores' if target.startswith('P.') else 'Mascotas' if target.startswith('M.') else ('📋 Revisión / Por Organizar' if target.startswith('Persona Nueva') else 'Conocidos'))
+                    clean_target = target.replace('👤', '').strip()
+                    if clean_target.startswith('Persona Nueva') or 'persona nueva' in clean_target.lower() or 'persona #' in clean_target.lower():
+                        cat = "Personas Sin Nombre"
+                        ident = clean_target
+                    else:
+                        ident = target
+                        cat = ident_to_cat_map.get(target) or ('Conocidos' if target.startswith(('C.', 'C ')) else 'Familia' if target.startswith(('F.', 'F ')) else 'YO' if target == 'YO' else 'Profesores' if target.startswith('P.') else 'Mascotas' if target.startswith('M.') else 'Conocidos')
                 else:
                     cat = "📋 Revisión / Por Organizar"
                     ident = "👥 Caras Aisladas / Ocasionales"
-            elif cat == 'Personas Sin Nombre' or 'desconocid' in cat_l or 'desconocid' in ident_l or (('persona' in ident_l or 'mascota nueva' in ident_l) and 'espalda' not in ident_l):
-                cat = "📋 Revisión / Por Organizar"
+            elif cat in ('Personas Sin Nombre', 'Personas Nuevas') or 'persona nueva' in ident_l or 'persona #' in ident_l or 'persona nueva' in cat_l:
+                cat = "Personas Sin Nombre"
                 if 'persona nueva' in ident_l or 'persona #' in ident_l:
                     clean_num = ident.replace('👤', '').strip()
-                    ident = f"👤 {clean_num}"
+                    ident = clean_num
                 else:
                     ident = "❓ Desconocidos (Por Identificar)"
-            elif not is_person_album and cat in ['_Dudosos', 'Revision_Interactiva', 'Falsos_Positivos']:
+            elif 'desconocid' in cat_l or 'desconocid' in ident_l:
+                cat = "📋 Revisión / Por Organizar"
+                ident = "❓ Desconocidos (Por Identificar)"
+            elif not is_person_album and cat in ['_Dudosos', 'Revision_Interactiva', 'Falsos_Positivos', 'Revisión']:
                 cat = "📋 Revisión / Por Organizar"
                 ident = "⚠️ Dudosos / Baja Confianza"
         
@@ -836,9 +850,9 @@ def get_gallery(force_reload=False):
                             f_cat = 'YO'
                         elif f_clean.startswith('P. '):
                             f_cat = 'Profesores'
-                        elif f_clean.startswith('Persona Nueva'):
-                            f_cat = '📋 Revisión / Por Organizar'
-                            f_clean_sanitized = f"👤 {f_clean}" if not f_clean.startswith('👤') else f_clean
+                        elif f_clean.startswith('Persona Nueva') or 'persona nueva' in f_clean.lower() or 'persona #' in f_clean.lower():
+                            f_cat = 'Personas Sin Nombre'
+                            f_clean_sanitized = f_clean.replace('👤', '').strip()
                         else:
                             f_cat = 'Conocidos'
                     
@@ -864,6 +878,41 @@ def get_gallery(force_reload=False):
                     add_to_gallery('📋 Revisión / Por Organizar', '⚠️ Grupos por confirmar', item_apple)
     except Exception as e_app:
         print(f"[WARN] Error integrating apple_db virtual photos: {e_app}")
+
+    # ── Final Consolidation & Rogue Category Pruning ──
+    # 1. Ensure all 'Persona Nueva' or unnamed personas are unified exclusively under 'Personas Sin Nombre'
+    if 'Personas Sin Nombre' not in gallery:
+        gallery['Personas Sin Nombre'] = {}
+    
+    if '📋 Revisión / Por Organizar' in gallery:
+        rev_idents = list(gallery['📋 Revisión / Por Organizar'].keys())
+        for r_id in rev_idents:
+            if 'persona nueva' in r_id.lower() or 'persona #' in r_id.lower():
+                clean_target = r_id.replace('👤', '').strip()
+                if clean_target not in gallery['Personas Sin Nombre']:
+                    gallery['Personas Sin Nombre'][clean_target] = []
+                gallery['Personas Sin Nombre'][clean_target].extend(gallery['📋 Revisión / Por Organizar'].pop(r_id))
+    
+    # 2. Merge any rogue 'Revisión' into '📋 Revisión / Por Organizar' -> '⏳ Pendientes de Organizar'
+    if 'Revisión' in gallery:
+        for r_k, r_items in gallery['Revisión'].items():
+            gallery.setdefault('📋 Revisión / Por Organizar', {}).setdefault('⏳ Pendientes de Organizar', []).extend(r_items)
+        del gallery['Revisión']
+        
+    # 3. Merge any rogue 'Revision_Interactiva' into '📋 Revisión / Por Organizar' -> '📷 Fotos Sin Rostro'
+    if 'Revision_Interactiva' in gallery:
+        for r_k, r_items in gallery['Revision_Interactiva'].items():
+            gallery.setdefault('📋 Revisión / Por Organizar', {}).setdefault('📷 Fotos Sin Rostro', []).extend(r_items)
+        del gallery['Revision_Interactiva']
+        
+    # 4. Prune empty folders and empty categories (never display a folder with 0 items)
+    for c in list(gallery.keys()):
+        if isinstance(gallery[c], dict):
+            for i_k in list(gallery[c].keys()):
+                if not gallery[c][i_k]:
+                    del gallery[c][i_k]
+            if not gallery[c]:
+                del gallery[c]
 
     # Sort person album items by 3-tier sections: official -> suggestion -> review
     section_order = {'official': 0, 'suggestion': 1, 'review': 2}

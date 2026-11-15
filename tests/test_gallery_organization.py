@@ -168,11 +168,11 @@ class TestGalleryOrganization(unittest.TestCase):
             dudoso_dir.mkdir(parents=True, exist_ok=True)
             (dudoso_dir / "doubtful.jpg").write_bytes(b"DOUBTFUL_PHOTO")
 
-            clear_gallery_cache()
-            flask_app = create_app()
-            with flask_app.test_request_context('/api/gallery?force=true'):
-                res = get_gallery()
-                gal = res.get_json()
+            with patch('app.services.gallery_service.set_gallery_cache'):
+                flask_app = create_app()
+                with flask_app.test_request_context('/api/gallery?force=true'):
+                    res = get_gallery()
+                    gal = res.get_json()
 
             # La persona debe existir en Conocidos
             self.assertIn("Conocidos", gal)
