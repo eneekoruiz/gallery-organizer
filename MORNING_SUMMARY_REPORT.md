@@ -145,3 +145,15 @@ En esta ronda de pulido de élite se aplicaron las siguientes optimizaciones fin
   - Tareas activas: 0 bloqueadas, 0 colgadas en estado infinito.
   - Resiliencia comprobada: cualquier excepción transiciona de inmediato al estado `error` con captura de traza completa sin congelar el hilo principal.
 - **Veredicto SRE Final**: **SISTEMA ESTABLE Y EN PRODUCCIÓN (100% OPERATIVO)**.
+
+---
+
+## 10. Nueva Funcionalidad: Agrupación Automática de "Personas de Espaldas"
+
+- **Motivación**: En fotos donde las personas están dadas la vuelta o de espaldas, los algoritmos biométricos faciales (YuNet/SFace) no pueden detectar un rostro frontal. Sin embargo, no son paisajes ni memes genéricos, sino seres humanos que el usuario necesita poder inspeccionar juntos de un vistazo.
+- **Detección**: Utiliza YOLOv8 (`detect_pets_and_bodies` en `app/services/pet_service.py`) para detectar la silueta corporal humana (`class == "person"`). Al no haber un rostro frontal válido detectado dentro de dicha caja, se clasifica automáticamente con etiqueta `👤 Persona de Espaldas` (`is_body: True`, `is_back_turned: True`).
+- **Árbol de Galería**: Se agrupan bajo la categoría `📋 Revisión / Por Organizar` en el sub-álbum dedicado `👤 Personas de Espaldas` tanto en fotos locales (`Resultados/Revision_Interactiva/Personas_De_Espaldas`) como virtuales (`apple_db.json`).
+- **Script y Endpoint de Clasificación**:
+  - Script independiente: `python scripts/classify_personas_de_espaldas.py [--dry-run] [--limit N]`.
+  - Endpoint API: `POST /api/classify_back_turned`.
+- **Suite de Pruebas**: `tests/test_personas_de_espaldas.py` (4 nuevos tests unitarios, suite completa con **93/93 tests en verde**).
