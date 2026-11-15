@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * SmartGallery AI - Production Modular Bundle (Clean Code Architecture)
- * Generated: 2026-11-14 21:58:42
+ * Generated: 2026-11-15 03:20:02
  * Architecture: Decoupled Modules in static/js/modules/
  * ====================================================================
  */
@@ -205,7 +205,7 @@ window.toggleHeaderOptionsMenu = function(e) {
         const menuWidth = Math.min(250, vw - 24);
         menu.style.position = 'fixed';
         menu.style.width = menuWidth + 'px';
-        menu.style.maxWidth = 'calc(100vw - 24px)';
+        menu.style.maxWidth = (vw - 24) + 'px';
         menu.style.boxSizing = 'border-box';
         menu.style.top = (btnRect.bottom + 8) + 'px';
         let leftPos = btnRect.left;

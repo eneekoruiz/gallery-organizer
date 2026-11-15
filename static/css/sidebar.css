@@ -159,9 +159,20 @@
     background: var(--bg-hover) !important;
 }
 
+.tree-folder.identity-item {
+    transition: background 0.15s ease, transform 0.15s var(--ease-spring), color 0.15s ease;
+}
+
 .tree-folder.identity-item:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
     color: var(--text-primary) !important;
+    transform: translateX(2px);
+}
+
+.tree-folder.identity-item.active {
+    background: rgba(10, 132, 255, 0.18) !important;
+    color: #64d2ff !important;
+    font-weight: 600;
 }
 
 .sidebar-person-avatar {
@@ -170,8 +181,14 @@
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
     background: #1c1c1e;
+    transition: transform 0.2s var(--ease-spring), border-color 0.2s ease;
+}
+
+.tree-folder.identity-item:hover .sidebar-person-avatar {
+    transform: scale(1.12);
+    border-color: #64d2ff;
 }
 
 .sidebar-person-avatar-placeholder {
@@ -186,6 +203,12 @@
     font-size: 11px;
     font-weight: 700;
     flex-shrink: 0;
+    border: 1.5px solid rgba(10, 132, 255, 0.3);
+    transition: transform 0.2s var(--ease-spring);
+}
+
+.tree-folder.identity-item:hover .sidebar-person-avatar-placeholder {
+    transform: scale(1.12);
 }
 
 .spotlight-dropdown {

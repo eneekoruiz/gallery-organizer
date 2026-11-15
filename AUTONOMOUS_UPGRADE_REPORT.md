@@ -38,9 +38,12 @@
 - **Ensemble Consensus UP-CAC (EC-UP-CAC)**: Enlace completo (*Complete Linkage*) con ratio de Lowe ($\ge 1.25$) evaluado en múltiples escalas de resolución.
 - **Auditoría Espectral de Bimodalidad**: Cálculo del valor de Fiedler ($\lambda_2$) sobre el Laplaciano simétrico normalizado de cada grupo; si se detecta bimodalidad interna, se aplica un corte espectral bipartito (*Normalized Cut*) para bifurcar el clúster.
 
-### C. Rendimiento Full-Stack e Interfaz
+### C. Rendimiento Full-Stack e Interfaz de Nivel Estudio (Apple Photos & Immich)
 - **Optimización de Consultas SQL**: Índices específicos añadidos a `smart_gallery_index.db` (`idx_identity`, `idx_embedding_present`).
-- **Arquitectura Anti-Wobble / Zero-Overflow**: Reset estricto de raíz en `static/css/base.css` garantizando inmunidad al scroll horizontal en pantallas móviles.
+- **Arquitectura Anti-Wobble / Zero-Overflow**: Reset estricto de raíz en `static/css/base.css` garantizando inmunidad al scroll horizontal en pantallas móviles (eliminación total de selectores ilegales `100vw`).
+- **Tokens de Diseño y Elevación (`static/css/variables.css`)**: Glassmorphism avanzado (`--bg-glass`, `--glass-blur`), sombras suaves multicapa y esquinas redondeadas calibradas (`--radius-md: 12px`, `--radius-lg: 18px`).
+- **Mosaicos de Álbumes Dinámicos (`static/css/gallery.css`)**: Estilos dedicados para `.home-album-card`, `.home-album-mosaic`, `.home-album-info`, `.home-album-name` con animaciones de resorte iOS y carga diferida con skeletons.
+- **Tarjetas de Personas y Avatares Circulares**: Estilos dedicados para `.person-card`, `.person-avatar` y `.sidebar-person-avatar` con anillos de acento/esmeralda y micro-zoom táctil al pasar el ratón.
 
 ### D. Protocolo de Purga y Reindexación ("Tabula Rasa") (`scripts/tabula_rasa_pipeline.py`)
 - Snapshot de seguridad previo con copia atómica en `backups/tabula_rasa_pre_purge_<timestamp>/`.
@@ -68,10 +71,12 @@ python scripts/tabula_rasa_pipeline.py --action all --batch-size 50
 
 ## 4. Resultados de Verificación y Métricas
 
-- **Batería de Pruebas**: 84 tests automatizados ejecutados.
-- **Tasa de Éxito**: **100% OK (0 fallos, 0 errores)**.
+- **Batería de Pruebas**: 84 tests automatizados ejecutados (`tests/run_all_tests.py`).
+- **Tasa de Éxito**: **100% OK (0 fallos, 0 errores)** en 44.26s.
 - **Benchmark de Rendimiento**:
-  - Búsqueda vectorial facial (20.000 vectores 128-D): **7.90 ms**.
-  - Detección de duplicados exactos (20.000 items): **49.82 ms**.
-  - Consulta paginada B-Tree Index: **0.39 ms**.
-  - Arranque limpio del servidor (`Flask/FastAPI`): Confirmado sin excepciones.
+  - Búsqueda vectorial facial (20.000 vectores 128-D): **6.24 ms**.
+  - Detección de duplicados exactos (20.000 items): **48.01 ms**.
+  - Detección de ráfagas pHash (20.000 items): **39.71 ms**.
+  - Consulta paginada B-Tree Index: **0.44 ms**.
+  - Arranque del servidor web Flask: **200 OK**.
+  - Compilación frontend de 10 módulos: **0 errores**.

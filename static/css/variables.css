@@ -35,6 +35,18 @@
     --radius-lg: 18px;
     --radius-full: 9999px;
     --sidebar-width: 290px;
+
+    /* Glassmorphism & Elevation (Apple Photos & Immich Aesthetic) */
+    --bg-glass: rgba(18, 20, 28, 0.82);
+    --bg-glass-heavy: rgba(14, 15, 22, 0.95);
+    --glass-blur: blur(28px) saturate(180%);
+    --glass-blur-heavy: blur(35px) saturate(200%);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --shadow-floating: 0 20px 50px rgba(0, 0, 0, 0.75);
+    --avatar-ring: 2px solid rgba(255, 255, 255, 0.16);
+    --avatar-ring-accent: 2px solid #0a84ff;
+    --avatar-ring-owner: 2px solid #30d158;
     
     /* Transitions & Curves */
     --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
