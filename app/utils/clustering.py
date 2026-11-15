@@ -359,8 +359,11 @@ def consolidate_new_persons_upcac(db: dict, known_centroids: dict = None) -> dic
             db[path]["identity"] = new_name
             db[path]["category"] = "Personas Nuevas"
             db[path]["status"] = "Clasificado"
+            seen_faces = 0
             for f in db[path].get("faces", []):
-                f["identity"] = new_name
+                seen_faces += 1
+                face_suffix = f" ({chr(64 + seen_faces)})" if seen_faces > 1 else ""
+                f["identity"] = f"{new_name}{face_suffix}"
                 f["category"] = "Personas Nuevas"
 
     return {
