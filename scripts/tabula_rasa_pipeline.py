@@ -21,6 +21,8 @@ sys.path.insert(0, str(ROOT_DIR))
 
 from app.services.biometric_engine import estimate_face_quality_and_pose, extract_features_with_tta
 from app.utils.clustering import cluster_faces_consensus_upcac, audit_and_split_contaminated_clusters
+from app.utils.images import decode_image
+import gc
 
 DB_PATH = ROOT_DIR / "smart_gallery_index.db"
 APPLE_DB_PATH = ROOT_DIR / "apple_db.json"
@@ -235,15 +237,39 @@ def reindex_dataset(
             fps = (idx + 1) / max(elapsed, 0.001)
             print(f"  -> Progreso: {idx+1}/{total_images} fotos ({(idx+1)/total_images*100:.1f}%) | {fps:.1f} fotos/seg")
 
-        img = cv2.imread(img_path)
+        try:
+            with open(img_path, 'rb') as f:
+                img = decode_image(f.read())
+        except Exception:
+            img = None
+
         if img is None:
             continue
 
         h, w = img.shape[:2]
-        detector.setInputSize((w, h))
-        _, faces = detector.detect(img)
+        max_dim = 1280
+        if max(w, h) > max_dim:
+            scale = max_dim / max(w, h)
+            det_w, det_h = max(32, int(w * scale)), max(32, int(h * scale))
+            det_img = cv2.resize(img, (det_w, det_h))
+            detector.setInputSize((det_w, det_h))
+            _, raw_faces = detector.detect(det_img)
+            faces = None
+            if raw_faces is not None:
+                scaled_faces = []
+                for f in raw_faces:
+                    sf = f.copy().astype(np.float32)
+                    sf[:14:2] *= (w / det_w)
+                    sf[1:14:2] *= (h / det_h)
+                    scaled_faces.append(sf)
+                faces = scaled_faces
+            del det_img
+        else:
+            detector.setInputSize((w, h))
+            _, faces = detector.detect(img)
 
         if faces is None or len(faces) == 0:
+            del img
             continue
 
         valid_faces_in_image = []
@@ -282,8 +308,10 @@ def reindex_dataset(
             WHERE file_path = ?;
             """, (best_emb_blob, len(valid_faces_in_image), best_face["quality"]["quality_score"], img_path))
 
+        del img
         if idx % batch_size == 0:
             conn.commit()
+            gc.collect()
 
     conn.commit()
     conn.close()

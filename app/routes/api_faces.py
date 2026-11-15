@@ -32,6 +32,66 @@ def api_auto_classify_filename_route():
 def api_reset_face_learning_route():
     return api_reset_face_learning()
 
+@api_faces_bp.route('/tabula_rasa', methods=['POST'])
+def api_tabula_rasa_route():
+    data = request.get_json(silent=True) or {}
+    action = data.get('action', 'audit')
+    dry_run = data.get('dry_run', False)
+    batch_size = int(data.get('batch_size', 50))
+    max_photos = data.get('max_photos', None)
+
+    from scripts.tabula_rasa_pipeline import create_security_backup, execute_purge, reindex_dataset, DB_PATH, APPLE_DB_PATH
+
+    if action == 'audit':
+        return jsonify({
+            "status": "ok",
+            "action": "audit",
+            "db_exists": DB_PATH.exists(),
+            "apple_db_exists": APPLE_DB_PATH.exists()
+        })
+
+    elif action == 'backup':
+        backup_dir = create_security_backup()
+        return jsonify({
+            "status": "ok",
+            "action": "backup",
+            "backup_dir": str(backup_dir)
+        })
+
+    elif action == 'purge':
+        if not dry_run:
+            create_security_backup()
+        execute_purge(dry_run=dry_run)
+        return jsonify({
+            "status": "ok",
+            "action": "purge",
+            "dry_run": dry_run,
+            "message": "Tabula Rasa purge executed successfully."
+        })
+
+    elif action in ('reindex', 'all'):
+        from app.services.task_service import submit_task
+
+        def run_tabula_rasa_task(task_inst):
+            task_inst.progress = "Iniciando respaldo de seguridad..."
+            create_security_backup()
+            task_inst.progress = "Ejecutando purga de vectores obsoletos..."
+            execute_purge(dry_run=False)
+            task_inst.progress = "Reindexando coleccion con pipeline biometrico SOTA..."
+            reindex_dataset(batch_size=batch_size, max_photos=max_photos)
+            task_inst.progress = "Proceso Tabula Rasa completado al 100%."
+            return {"status": "completed"}
+
+        task_id = submit_task("tabula_rasa_pipeline", run_tabula_rasa_task, retry=False)
+        return jsonify({
+            "status": "accepted",
+            "action": action,
+            "task_id": task_id,
+            "message": "Pipeline Tabula Rasa lanzado en segundo plano."
+        }), 202
+
+    return jsonify({"error": f"Accion '{action}' no reconocida"}), 400
+
 @api_faces_bp.route('/rebuild_clean_centroids', methods=['POST'])
 def api_rebuild_clean_centroids_route():
     return api_rebuild_clean_centroids()
