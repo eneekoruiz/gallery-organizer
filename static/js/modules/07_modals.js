@@ -2351,7 +2351,19 @@ document.addEventListener('keydown', (e) => {
 
             if (typeof resetZoom === 'function') resetZoom();
         } else if (e.key === 'Escape') {
-            closeLightbox();
+            e.preventDefault();
+            const openModals = document.querySelectorAll('.modal:not(.hidden), [id$="-modal"]:not([style*="display: none"]):not([style*="display:none"])');
+            let closedAnyModal = false;
+            openModals.forEach(m => {
+                if (m.id !== 'lightbox' && m.style.display !== 'none') {
+                    if (typeof closeModal === 'function') closeModal(m.id);
+                    else m.style.display = 'none';
+                    closedAnyModal = true;
+                }
+            });
+            if (!closedAnyModal) {
+                closeLightbox();
+            }
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
             if (typeof deleteCurrentFile === 'function') deleteCurrentFile();
         }
@@ -2391,10 +2403,14 @@ function handleSpotlightSearch(query) {
     );
 
     if (matches.length === 0) {
-        dropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#8e8e93; font-size:12px;">No se encontraron personas o álbumes.</div>';
-
+        dropdown.innerHTML = `
+            <div style="padding:22px 14px; text-align:center; color:#8e8e93; animation:fadeIn 0.2s ease;">
+                <div style="font-size:22px; margin-bottom:6px; opacity:0.6;">🔍</div>
+                <div style="font-size:12.5px; font-weight:600; color:#fff; margin-bottom:2px;">Sin resultados</div>
+                <div style="font-size:11px; line-height:1.4; color:#8e8e93;">No se encontraron personas o álbumes que coincidan.</div>
+            </div>
+        `;
         dropdown.style.display = 'block';
-
         return;
     }
 

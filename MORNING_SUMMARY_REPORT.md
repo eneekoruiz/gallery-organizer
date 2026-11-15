@@ -103,3 +103,30 @@ El sistema anterior padecía de acoplamiento rígido a embeddings de 128 flotant
 - **Rama Principal**: `main`
 - **Etiquetas de Seguridad Creadas**: `backup-pre-upgrade` y `backup-pre-overhaul`
 - **Servicio Render**: `gallery-organizer-api` configurado bajo `render.yaml` con contenedor Docker optimizado para el plan gratuito de 512 MB de memoria RAM.
+
+---
+
+## 8. Toques Finales Aplicados
+
+En esta ronda de pulido de élite se aplicaron las siguientes optimizaciones finales:
+
+1. **Sistema Centralizado de Notificaciones Toast (`static/js/modules/01_state.js`)**:
+   - Se diseñó un sistema de notificaciones flotantes con soporte para tipos semánticos (`success`, `error`, `warning`, `info`) con badges luminiscentes, curva de resorte iOS, cierre interactivo y auto-desvanecimiento fluido.
+   - Se corrigió el bug heredado donde llamadas con `'success'` eran tratadas como booleanos verdaderos y coloreadas en rojo como error.
+
+2. **Estados Vacíos Elegantes (Empty States)**:
+   - Se implementó un estado vacío ilustrado para la cuadrícula principal cuando una sección o filtro no contiene imágenes (`.gallery-empty-state`).
+   - Se rediseñó el estado de búsqueda Spotlight (`07_modals.js`) y el visor de caras vacías en Lightbox (`04_lightbox.js`).
+
+3. **Navegación por Teclado y Control Jerárquico de Modales**:
+   - Cierre inteligente con tecla `Escape`: si hay un modal abierto (`merge-modal`, `evolution-modal`, etc.), se cierra primero dicho modal sin cerrar el visor de fondo; si no hay modales, cierra el Lightbox.
+   - Navegación fluida con flechas `←` y `→`, atajo de zoom `+`/`-`/`0` y eliminación con `Supr`.
+
+4. **Blindaje de Casos Borde y Estrés del Motor Facial (`tests/test_edge_cases_and_stress.py`)**:
+   - `app/utils/images.py` (`decode_image`): blindado contra entradas nulas, cadenas vacías, archivos truncados, PNG transparentes RGBA, WebP y escala de grises.
+   - Descarte automático de multitudes con micro-caras (< 20px IOD) mediante evaluación FIQA.
+   - Garantía de no-bloqueo: tareas en segundo plano que sufran excepciones transicionan de inmediato al estado `error` con captura de traza completa, eliminando tareas colgadas en `running`.
+
+5. **Limpieza Profunda del Repositorio (Zero Clutter)**:
+   - Eliminación de más de 170 MB de archivos temporales huérfanos (`tmp*`), capturas de depuración (`scratch_*`, `test_*.png`) y copias de seguridad redundantes.
+   - Actualización completa de `README.md` con codificación limpia UTF-8 y documentación técnica detallada.

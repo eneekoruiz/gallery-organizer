@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * SmartGallery AI - Production Modular Bundle (Clean Code Architecture)
- * Generated: 2026-11-15 03:20:02
+ * Generated: 2026-11-15 03:32:48
  * Architecture: Decoupled Modules in static/js/modules/
  * ====================================================================
  */
@@ -98,6 +98,93 @@ let isCurrentVideo = false;
 let currentFaces = [];
 let currentCat = null;
 let currentIdent = null;
+
+// ── Studio-Grade Toast Notification System (Apple Photos / Immich) ──
+window.showToast = function(message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:99999; display:flex; flex-direction:column; gap:10px; pointer-events:none; max-width:calc(100% - 48px);';
+        document.body.appendChild(container);
+    }
+
+    let toastType = 'info';
+    if (type === true || type === 'error') {
+        toastType = 'error';
+    } else if (type === 'success') {
+        toastType = 'success';
+    } else if (type === 'warning') {
+        toastType = 'warning';
+    } else {
+        toastType = 'info';
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `sg-toast sg-toast-${toastType}`;
+    toast.style.pointerEvents = 'auto';
+
+    let icon = 'ℹ️';
+    let borderColor = 'rgba(10, 132, 255, 0.4)';
+    let bgGlow = 'rgba(10, 132, 255, 0.15)';
+    if (toastType === 'success') {
+        icon = '✅';
+        borderColor = 'rgba(48, 209, 88, 0.45)';
+        bgGlow = 'rgba(48, 209, 88, 0.18)';
+    } else if (toastType === 'error') {
+        icon = '❌';
+        borderColor = 'rgba(255, 69, 58, 0.45)';
+        bgGlow = 'rgba(255, 69, 58, 0.18)';
+    } else if (toastType === 'warning') {
+        icon = '⚠️';
+        borderColor = 'rgba(255, 159, 10, 0.45)';
+        bgGlow = 'rgba(255, 159, 10, 0.18)';
+    }
+
+    toast.style.cssText = `
+        background: rgba(18, 20, 28, 0.94);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid ${borderColor};
+        box-shadow: 0 12px 36px rgba(0,0,0,0.65), 0 0 20px ${bgGlow};
+        color: #ffffff;
+        padding: 12px 18px;
+        border-radius: 14px;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        max-width: 380px;
+        word-break: break-word;
+        box-sizing: border-box;
+    `;
+
+    toast.innerHTML = `
+        <span style="font-size:16px; flex-shrink:0;">${icon}</span>
+        <div style="flex:1; line-height:1.4;">${message}</div>
+        <button style="background:transparent; border:none; color:#8e8e93; font-size:14px; cursor:pointer; padding:0 0 0 8px; flex-shrink:0;" onclick="this.parentElement.remove()">✕</button>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateY(0) scale(1)';
+        toast.style.opacity = '1';
+    });
+
+    const timeoutMs = toastType === 'error' ? 5000 : 3500;
+    setTimeout(() => {
+        toast.style.transform = 'translateY(15px) scale(0.95)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 260);
+    }, timeoutMs);
+};
+if (typeof showToast === 'undefined') {
+    var showToast = window.showToast;
+}
 
 // ── Header Collapse & Grid Density Preferences ───────────────────────
 
@@ -2285,6 +2372,19 @@ async function purgeExactDuplicates() {
 
                 window._lastRenderedTier = null;
 
+                if (!items || items.length === 0) {
+                    grid.innerHTML = `
+                        <div class="gallery-empty-state" style="grid-column: 1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 20px; text-align:center; min-height:360px; animation:cardSlideIn 0.35s var(--ease-spring) both;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+                                📷
+                            </div>
+                            <div style="font-size:16px; font-weight:700; color:#ffffff; margin-bottom:6px;">No hay fotos en esta sección</div>
+                            <div style="font-size:13px; color:#8e8e93; max-width:340px; line-height:1.5;">Esta carpeta o filtro no contiene imágenes en este momento. Puedes añadir o sincronizar nuevas fotos cuando lo desees.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
                 let sentry = document.getElementById('grid-sentry');
 
                 if (!sentry) {
@@ -3116,17 +3216,15 @@ async function openLightbox(item) {
     if (cardsContainer) {
         if (isZeroFaces) {
             cardsContainer.innerHTML = `
-
-                <div style="padding:28px 16px; text-align:center; color:#8e8e93;">
-
-                    <div style="font-size:28px; margin-bottom:8px; opacity:0.6;">📷</div>
-
-                    <div style="font-size:13px; font-weight:600; color:#fff; margin-bottom:4px;">Sin personas detectadas</div>
-
-                    <div style="font-size:11px; line-height:1.4;">No se encontraron caras registradas en esta foto.</div>
-
-                    <button onclick="runAnalysis(true)" style="margin-top:14px; padding:6px 14px; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#64d2ff; font-size:11px; font-weight:600; cursor:pointer;">🔍 Forzar detección</button>
-
+                <div style="padding:32px 16px; text-align:center; color:#8e8e93; animation:fadeIn 0.25s ease;">
+                    <div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 12px auto; box-shadow:0 4px 16px rgba(0,0,0,0.25);">
+                        👤
+                    </div>
+                    <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:4px;">Sin personas detectadas</div>
+                    <div style="font-size:11.5px; line-height:1.4; color:#8e8e93; margin-bottom:14px;">No se identificaron rostros en esta imagen con el nivel de confianza actual.</div>
+                    <div style="display:flex; gap:8px; justify-content:center;">
+                        <button onclick="runAnalysis(true)" style="padding:6px 12px; border-radius:10px; background:rgba(10,132,255,0.15); border:1px solid rgba(10,132,255,0.3); color:#64d2ff; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s ease;">🔍 Forzar escaneo</button>
+                    </div>
                 </div>`;
         } else {
             cardsContainer.innerHTML = `
@@ -3786,33 +3884,9 @@ async function openLightbox(item) {
         }
 
         function showToast(message, isError=false) {
-            let container = document.getElementById('toast-container');
-
-            if (!container) {
-                container = document.createElement('div');
-
-                container.id = 'toast-container';
-
-                container.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;';
-
-                document.body.appendChild(container);
+            if (typeof window.showToast === 'function') {
+                return window.showToast(message, isError);
             }
-
-            const toast = document.createElement('div');
-
-            toast.style.cssText = `background: ${isError ? 'rgba(255, 59, 48, 0.9)' : 'rgba(10, 132, 255, 0.9)'}; color: white; padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: -apple-system, sans-serif; font-size: 13px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);`;
-
-            toast.innerHTML = `<strong>${isError ? 'Aviso' : 'Información'}</strong><br>${message}`;
-
-            container.appendChild(toast);
-
-            requestAnimationFrame(() => toast.style.transform = 'translateX(0)');
-
-            setTimeout(() => {
-                toast.style.transform = 'translateX(120%)';
-
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
         }
 
         async function loadIdentities() {
@@ -8882,7 +8956,19 @@ document.addEventListener('keydown', (e) => {
 
             if (typeof resetZoom === 'function') resetZoom();
         } else if (e.key === 'Escape') {
-            closeLightbox();
+            e.preventDefault();
+            const openModals = document.querySelectorAll('.modal:not(.hidden), [id$="-modal"]:not([style*="display: none"]):not([style*="display:none"])');
+            let closedAnyModal = false;
+            openModals.forEach(m => {
+                if (m.id !== 'lightbox' && m.style.display !== 'none') {
+                    if (typeof closeModal === 'function') closeModal(m.id);
+                    else m.style.display = 'none';
+                    closedAnyModal = true;
+                }
+            });
+            if (!closedAnyModal) {
+                closeLightbox();
+            }
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
             if (typeof deleteCurrentFile === 'function') deleteCurrentFile();
         }
@@ -8922,10 +9008,14 @@ function handleSpotlightSearch(query) {
     );
 
     if (matches.length === 0) {
-        dropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#8e8e93; font-size:12px;">No se encontraron personas o álbumes.</div>';
-
+        dropdown.innerHTML = `
+            <div style="padding:22px 14px; text-align:center; color:#8e8e93; animation:fadeIn 0.2s ease;">
+                <div style="font-size:22px; margin-bottom:6px; opacity:0.6;">🔍</div>
+                <div style="font-size:12.5px; font-weight:600; color:#fff; margin-bottom:2px;">Sin resultados</div>
+                <div style="font-size:11px; line-height:1.4; color:#8e8e93;">No se encontraron personas o álbumes que coincidan.</div>
+            </div>
+        `;
         dropdown.style.display = 'block';
-
         return;
     }
 

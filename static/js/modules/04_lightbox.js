@@ -123,17 +123,15 @@ async function openLightbox(item) {
     if (cardsContainer) {
         if (isZeroFaces) {
             cardsContainer.innerHTML = `
-
-                <div style="padding:28px 16px; text-align:center; color:#8e8e93;">
-
-                    <div style="font-size:28px; margin-bottom:8px; opacity:0.6;">📷</div>
-
-                    <div style="font-size:13px; font-weight:600; color:#fff; margin-bottom:4px;">Sin personas detectadas</div>
-
-                    <div style="font-size:11px; line-height:1.4;">No se encontraron caras registradas en esta foto.</div>
-
-                    <button onclick="runAnalysis(true)" style="margin-top:14px; padding:6px 14px; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#64d2ff; font-size:11px; font-weight:600; cursor:pointer;">🔍 Forzar detección</button>
-
+                <div style="padding:32px 16px; text-align:center; color:#8e8e93; animation:fadeIn 0.25s ease;">
+                    <div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 12px auto; box-shadow:0 4px 16px rgba(0,0,0,0.25);">
+                        👤
+                    </div>
+                    <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:4px;">Sin personas detectadas</div>
+                    <div style="font-size:11.5px; line-height:1.4; color:#8e8e93; margin-bottom:14px;">No se identificaron rostros en esta imagen con el nivel de confianza actual.</div>
+                    <div style="display:flex; gap:8px; justify-content:center;">
+                        <button onclick="runAnalysis(true)" style="padding:6px 12px; border-radius:10px; background:rgba(10,132,255,0.15); border:1px solid rgba(10,132,255,0.3); color:#64d2ff; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s ease;">🔍 Forzar escaneo</button>
+                    </div>
                 </div>`;
         } else {
             cardsContainer.innerHTML = `

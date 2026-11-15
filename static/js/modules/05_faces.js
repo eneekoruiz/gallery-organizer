@@ -317,33 +317,9 @@
         }
 
         function showToast(message, isError=false) {
-            let container = document.getElementById('toast-container');
-
-            if (!container) {
-                container = document.createElement('div');
-
-                container.id = 'toast-container';
-
-                container.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;';
-
-                document.body.appendChild(container);
+            if (typeof window.showToast === 'function') {
+                return window.showToast(message, isError);
             }
-
-            const toast = document.createElement('div');
-
-            toast.style.cssText = `background: ${isError ? 'rgba(255, 59, 48, 0.9)' : 'rgba(10, 132, 255, 0.9)'}; color: white; padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: -apple-system, sans-serif; font-size: 13px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);`;
-
-            toast.innerHTML = `<strong>${isError ? 'Aviso' : 'Información'}</strong><br>${message}`;
-
-            container.appendChild(toast);
-
-            requestAnimationFrame(() => toast.style.transform = 'translateX(0)');
-
-            setTimeout(() => {
-                toast.style.transform = 'translateX(120%)';
-
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
         }
 
         async function loadIdentities() {

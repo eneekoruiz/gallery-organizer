@@ -363,6 +363,19 @@
 
                 window._lastRenderedTier = null;
 
+                if (!items || items.length === 0) {
+                    grid.innerHTML = `
+                        <div class="gallery-empty-state" style="grid-column: 1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 20px; text-align:center; min-height:360px; animation:cardSlideIn 0.35s var(--ease-spring) both;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+                                📷
+                            </div>
+                            <div style="font-size:16px; font-weight:700; color:#ffffff; margin-bottom:6px;">No hay fotos en esta sección</div>
+                            <div style="font-size:13px; color:#8e8e93; max-width:340px; line-height:1.5;">Esta carpeta o filtro no contiene imágenes en este momento. Puedes añadir o sincronizar nuevas fotos cuando lo desees.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
                 let sentry = document.getElementById('grid-sentry');
 
                 if (!sentry) {

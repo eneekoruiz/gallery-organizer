@@ -61,6 +61,93 @@ let currentFaces = [];
 let currentCat = null;
 let currentIdent = null;
 
+// ── Studio-Grade Toast Notification System (Apple Photos / Immich) ──
+window.showToast = function(message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:99999; display:flex; flex-direction:column; gap:10px; pointer-events:none; max-width:calc(100% - 48px);';
+        document.body.appendChild(container);
+    }
+
+    let toastType = 'info';
+    if (type === true || type === 'error') {
+        toastType = 'error';
+    } else if (type === 'success') {
+        toastType = 'success';
+    } else if (type === 'warning') {
+        toastType = 'warning';
+    } else {
+        toastType = 'info';
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `sg-toast sg-toast-${toastType}`;
+    toast.style.pointerEvents = 'auto';
+
+    let icon = 'ℹ️';
+    let borderColor = 'rgba(10, 132, 255, 0.4)';
+    let bgGlow = 'rgba(10, 132, 255, 0.15)';
+    if (toastType === 'success') {
+        icon = '✅';
+        borderColor = 'rgba(48, 209, 88, 0.45)';
+        bgGlow = 'rgba(48, 209, 88, 0.18)';
+    } else if (toastType === 'error') {
+        icon = '❌';
+        borderColor = 'rgba(255, 69, 58, 0.45)';
+        bgGlow = 'rgba(255, 69, 58, 0.18)';
+    } else if (toastType === 'warning') {
+        icon = '⚠️';
+        borderColor = 'rgba(255, 159, 10, 0.45)';
+        bgGlow = 'rgba(255, 159, 10, 0.18)';
+    }
+
+    toast.style.cssText = `
+        background: rgba(18, 20, 28, 0.94);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid ${borderColor};
+        box-shadow: 0 12px 36px rgba(0,0,0,0.65), 0 0 20px ${bgGlow};
+        color: #ffffff;
+        padding: 12px 18px;
+        border-radius: 14px;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        max-width: 380px;
+        word-break: break-word;
+        box-sizing: border-box;
+    `;
+
+    toast.innerHTML = `
+        <span style="font-size:16px; flex-shrink:0;">${icon}</span>
+        <div style="flex:1; line-height:1.4;">${message}</div>
+        <button style="background:transparent; border:none; color:#8e8e93; font-size:14px; cursor:pointer; padding:0 0 0 8px; flex-shrink:0;" onclick="this.parentElement.remove()">✕</button>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateY(0) scale(1)';
+        toast.style.opacity = '1';
+    });
+
+    const timeoutMs = toastType === 'error' ? 5000 : 3500;
+    setTimeout(() => {
+        toast.style.transform = 'translateY(15px) scale(0.95)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 260);
+    }, timeoutMs);
+};
+if (typeof showToast === 'undefined') {
+    var showToast = window.showToast;
+}
+
 // ── Header Collapse & Grid Density Preferences ───────────────────────
 
 window.toggleSidebar = function(force) {
