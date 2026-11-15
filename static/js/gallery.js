@@ -162,6 +162,7 @@ function renderTree() {
             else if (ident.includes('Dudosos')) displayIcon = '⚠️';
             else if (ident.includes('Desconocidos')) displayIcon = '❓';
             else if (ident.includes('iCloud')) displayIcon = '🍏';
+            else if (ident.includes('Espaldas')) displayIcon = '👤';
             else if (ident.includes('Persona Nueva')) displayIcon = '👤';
 
             const leftDiv = document.createElement('div');

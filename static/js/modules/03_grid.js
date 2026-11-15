@@ -309,6 +309,8 @@
                 ident.includes('Pendientes de Organizar') ||
                 ident.includes('Vídeos Sin Rostro') ||
                 ident.includes('Fotos Sin Rostro') ||
+                ident.includes('Personas de Espaldas') ||
+                ident.includes('Espaldas') ||
                 ident === 'Favoritos' ||
                 ident === 'Papelera'
             );

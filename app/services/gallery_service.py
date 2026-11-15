@@ -203,6 +203,9 @@ def get_gallery(force_reload=False):
                 ident = subfolder
                 if folder == "YO" or subfolder == "YO":
                     cat, ident = "YO", "YO"
+            elif "personas_de_espaldas" in abs_p_l or "de_espaldas" in abs_p_l or "de espaldas" in folder_l or "de espaldas" in subfolder_l or folder_l in ("espaldas", "personas de espaldas") or subfolder_l in ("espaldas", "personas de espaldas"):
+                cat = "📋 Revisión / Por Organizar"
+                ident = "👤 Personas de Espaldas"
             elif "para revisar" in abs_p_l or "para organizar" in folder_l or "pendiente" in folder_l or "para organizar" in subfolder_l:
                 cat = "📋 Revisión / Por Organizar"
                 ident = "⏳ Pendientes de Organizar"
@@ -214,11 +217,19 @@ def get_gallery(force_reload=False):
                 f_name_check = path_obj.name.lower()
                 cached_faces = overrides.get(abs_p) or faces_cache.get(abs_p) or fc_by_basename.get(f_name_check, [])
                 if cached_faces:
+                    has_espaldas = any(f_e.get('is_body') or f_e.get('is_back_turned') or 'espalda' in str(f_e.get('identity', '')).lower() for f_e in cached_faces)
                     valid_ids = [f_e.get('identity') for f_e in cached_faces if f_e.get('identity') and not str(f_e.get('identity')).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar'))]
                     if valid_ids:
                         target_id = valid_ids[0]
-                        ident = target_id
-                        cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                        if 'espalda' in target_id.lower():
+                            cat = "📋 Revisión / Por Organizar"
+                            ident = "👤 Personas de Espaldas"
+                        else:
+                            ident = target_id
+                            cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                    elif has_espaldas:
+                        cat = "📋 Revisión / Por Organizar"
+                        ident = "👤 Personas de Espaldas"
                     else:
                         cat = "📋 Revisión / Por Organizar"
                         ident = "❓ Desconocidos (Por Identificar)"
@@ -321,13 +332,21 @@ def get_gallery(force_reload=False):
                 num_f = len(ids_in_file) if len(ids_in_file) > 0 else len(faces_in_file)
                 has_yo = ('YO' in ids_in_file) or any(str(x).upper() == 'YO' for x in ids_in_file)
                 
-                # Dynamic reclassification for Sin Rostro if faces are present
+                # Dynamic reclassification for Sin Rostro if faces or bodies are present
                 if ident in ('📷 Fotos Sin Rostro', '🎬 Vídeos Sin Rostro') and (num_f > 0 or len(faces_in_file) > 0):
+                    has_espaldas = any(f_e.get('is_body') or f_e.get('is_back_turned') or 'espalda' in str(f_e.get('identity', '')).lower() for f_e in faces_in_file)
                     valid_ids = [i for i in ids_in_file if not str(i).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar'))]
                     if valid_ids:
                         target_id = valid_ids[0]
-                        ident = target_id
-                        cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                        if 'espalda' in target_id.lower():
+                            cat = "📋 Revisión / Por Organizar"
+                            ident = "👤 Personas de Espaldas"
+                        else:
+                            ident = target_id
+                            cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                    elif has_espaldas:
+                        cat = "📋 Revisión / Por Organizar"
+                        ident = "👤 Personas de Espaldas"
                     else:
                         cat = "📋 Revisión / Por Organizar"
                         ident = "❓ Desconocidos (Por Identificar)"
@@ -474,21 +493,37 @@ def get_gallery(force_reload=False):
             if not is_person_album and ('_dudoso' in cat_l or '_dudoso' in ident_l or '_dudoso' in p_l or 'dudoso' in ident_l):
                 cat = "📋 Revisión / Por Organizar"
                 ident = "⚠️ Dudosos / Baja Confianza"
+            elif 'espalda' in cat_l or 'espalda' in ident_l or 'espalda' in p_l:
+                cat = "📋 Revisión / Por Organizar"
+                ident = "👤 Personas de Espaldas"
+                item['is_dudoso'] = False
+                item['needs_confirmation'] = False
             elif 'sin_rostro' in cat_l or 'sin_rostro' in ident_l or 'sin_rostro' in p_l:
                 # Si el item realmente tiene caras detectadas o asociadas, redirigir fuera de Sin Rostro
                 item_faces = item.get('faces') or []
                 item_ids = item.get('identities') or []
+                has_espaldas = any(f.get('is_body') or f.get('is_back_turned') or 'espalda' in str(f.get('identity', '')).lower() for f in item_faces)
                 if item.get('num_faces', 0) > 0 or len(item_faces) > 0 or len(item_ids) > 0:
                     valid_ids = [i for i in item_ids if not str(i).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar'))]
                     if not valid_ids:
                         valid_ids = [f.get('identity') for f in item_faces if f.get('identity') and not str(f.get('identity')).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar'))]
                     if valid_ids:
                         target = valid_ids[0]
-                        ident = target
-                        cat = ident_to_cat_map.get(target) or ('Conocidos' if target.startswith(('C.', 'C ')) else 'Familia' if target.startswith(('F.', 'F ')) else 'YO' if target == 'YO' else 'Profesores' if target.startswith('P.') else 'Mascotas' if target.startswith('M.') else 'Conocidos')
+                        if 'espalda' in target.lower():
+                            cat = "📋 Revisión / Por Organizar"
+                            ident = "👤 Personas de Espaldas"
+                        else:
+                            ident = target
+                            cat = ident_to_cat_map.get(target) or ('Conocidos' if target.startswith(('C.', 'C ')) else 'Familia' if target.startswith(('F.', 'F ')) else 'YO' if target == 'YO' else 'Profesores' if target.startswith('P.') else 'Mascotas' if target.startswith('M.') else 'Conocidos')
+                    elif has_espaldas:
+                        cat = "📋 Revisión / Por Organizar"
+                        ident = "👤 Personas de Espaldas"
                     else:
                         cat = "📋 Revisión / Por Organizar"
                         ident = "❓ Desconocidos (Por Identificar)"
+                elif has_espaldas:
+                    cat = "📋 Revisión / Por Organizar"
+                    ident = "👤 Personas de Espaldas"
                 else:
                     cat = "📋 Revisión / Por Organizar"
                     ident = "🎬 Vídeos Sin Rostro" if item.get('type') == 'video' else "📷 Fotos Sin Rostro"
@@ -507,7 +542,7 @@ def get_gallery(force_reload=False):
                 else:
                     cat = "📋 Revisión / Por Organizar"
                     ident = "👥 Caras Aisladas / Ocasionales"
-            elif cat == 'Personas Sin Nombre' or 'desconocid' in cat_l or 'desconocid' in ident_l or 'persona' in ident_l or 'mascota nueva' in ident_l:
+            elif cat == 'Personas Sin Nombre' or 'desconocid' in cat_l or 'desconocid' in ident_l or (('persona' in ident_l or 'mascota nueva' in ident_l) and 'espalda' not in ident_l):
                 cat = "📋 Revisión / Por Organizar"
                 if 'persona nueva' in ident_l or 'persona #' in ident_l:
                     clean_num = ident.replace('👤', '').strip()
@@ -572,14 +607,17 @@ def get_gallery(force_reload=False):
         for f_entry in faces_in_file:
             other_id = f_entry.get('identity')
             if other_id and other_id != ident and not other_id.startswith('Desconocid') and not other_id.startswith('Falso_Positivo') and not other_id.startswith('Ignorar'):
-                other_cat = ident_to_cat_map.get(other_id)
-                if not other_cat:
-                    if other_id.startswith('C. '): other_cat = 'Conocidos'
-                    elif other_id.startswith('F. '): other_cat = 'Familia'
-                    elif other_id == 'YO': other_cat = 'YO'
-                    else: other_cat = 'Conocidos'
-                    
-                clean_other_id = sanitize_display_name(other_id)
+                if 'espalda' in str(other_id).lower() or f_entry.get('is_body') or f_entry.get('is_back_turned'):
+                    other_cat = "📋 Revisión / Por Organizar"
+                    clean_other_id = "👤 Personas de Espaldas"
+                else:
+                    other_cat = ident_to_cat_map.get(other_id)
+                    if not other_cat:
+                        if other_id.startswith('C. '): other_cat = 'Conocidos'
+                        elif other_id.startswith('F. '): other_cat = 'Familia'
+                        elif other_id == 'YO': other_cat = 'YO'
+                        else: other_cat = 'Conocidos'
+                    clean_other_id = sanitize_display_name(other_id)
                 add_to_gallery(other_cat, clean_other_id, item)
         
         for group_cat, group_ident in group_albums(faces_in_file, ident_to_cat_map):
@@ -615,18 +653,29 @@ def get_gallery(force_reload=False):
                 cat = info.get('category', '📋 Revisión / Por Organizar')
                 ident = info.get('identity', '❓ Desconocidos (Por Identificar)')
 
-                if ident == '📷 Fotos Sin Rostro':
+                if 'espalda' in str(ident).lower():
+                    cat = "📋 Revisión / Por Organizar"
+                    ident = "👤 Personas de Espaldas"
+                elif ident == '📷 Fotos Sin Rostro':
                     bname_lower = fname.lower()
                     cached_f = info.get('faces') or faces_cache.get(p_str) or fc_by_basename.get(bname_lower)
                     if cached_f and len(cached_f) > 0:
+                        has_espaldas = any(f.get('is_body') or f.get('is_back_turned') or 'espalda' in str(f.get('identity', '')).lower() for f in cached_f)
                         valid_ids = [
                             f.get('identity') for f in cached_f
                             if f.get('identity') and not str(f.get('identity')).startswith(('Desconocid', 'Falso_Positivo', 'Excluid', 'Ignorar', 'Sin_Rostro'))
                         ]
                         if valid_ids:
                             target_id = valid_ids[0]
-                            ident = target_id
-                            cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                            if 'espalda' in target_id.lower():
+                                cat = "📋 Revisión / Por Organizar"
+                                ident = "👤 Personas de Espaldas"
+                            else:
+                                ident = target_id
+                                cat = ident_to_cat_map.get(target_id) or ('Conocidos' if target_id.startswith(('C.', 'C ')) else 'Familia' if target_id.startswith(('F.', 'F ')) else 'YO' if target_id == 'YO' else 'Profesores' if target_id.startswith('P.') else 'Mascotas' if target_id.startswith('M.') else 'Conocidos')
+                        elif has_espaldas:
+                            cat = "📋 Revisión / Por Organizar"
+                            ident = "👤 Personas de Espaldas"
                         else:
                             cat = "📋 Revisión / Por Organizar"
                             ident = "❓ Desconocidos (Por Identificar)"
@@ -2123,6 +2172,8 @@ def api_delete_group():
             RESULTADOS_DIR / "Conocidos" / ident,
             RESULTADOS_DIR / "Sin_Rostro" / c_ident,
             RESULTADOS_DIR / "Sin_Rostro" / ident,
+            RESULTADOS_DIR / "Revision_Interactiva" / "Personas_De_Espaldas",
+            RESULTADOS_DIR / "Personas_De_Espaldas",
             FOTOS_DIR / cat / ident,
             FOTOS_DIR / c_cat / c_ident,
             FOTOS_DIR / "Personas Sin Nombre" / c_ident,

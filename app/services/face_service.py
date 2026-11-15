@@ -1300,32 +1300,20 @@ def api_analyze():
 
                                     
 
-                            body_identity = matched_ov if matched_ov else "Persona (Sin rostro / Filtro)"
-
-                            body_conf = "✏️ Corrección Manual" if matched_ov else f"👤 Persona Detectada ({body['confidence']*100:.1f}%)"
-
+                            body_identity = matched_ov if matched_ov else "👤 Persona de Espaldas"
+                            body_conf = "✏️ Corrección Manual" if matched_ov else f"👤 Persona de Espaldas ({body['confidence']*100:.1f}%)"
                             body_tag = "manual" if matched_ov else "body"
 
-                            
-
                             faces_data.append({
-
                                 "x": head_x, "y": head_y, "width": head_w, "height": head_h,
-
                                 "img_width": width, "img_height": height,
-
                                 "identity": body_identity,
-
                                 "confidence": body_conf,
-
                                 "tag_type": body_tag,
-
                                 "feature": None,
-
                                 "is_manual": (matched_ov is not None),
-
-                                "is_body": True
-
+                                "is_body": True,
+                                "is_back_turned": True
                             })
 
                 except Exception as e_dual:
@@ -1352,7 +1340,7 @@ def api_analyze():
 
                 clean_id = raw_id[2:] if raw_id.startswith('? ') else raw_id
 
-                if clean_id and clean_id not in ("Desconocido", "Falso_Positivo", "Ignorar_Irrelevante", "Persona (Sin rostro / Filtro)", "Sin Nombre"):
+                if clean_id and clean_id not in ("Desconocido", "Falso_Positivo", "Ignorar_Irrelevante", "Persona (Sin rostro / Filtro)", "👤 Persona de Espaldas", "Persona de Espaldas", "Sin Nombre"):
 
                     assigned_counts[clean_id] = assigned_counts.get(clean_id, 0) + 1
 
@@ -1402,7 +1390,7 @@ def api_analyze():
 
                 for f in faces_data 
 
-                if f.get('identity') and f.get('identity') not in ("Desconocido", "Falso_Positivo", "Ignorar_Irrelevante", "Persona (Sin rostro / Filtro)", "Sin Nombre")
+                if f.get('identity') and f.get('identity') not in ("Desconocido", "Falso_Positivo", "Ignorar_Irrelevante", "Persona (Sin rostro / Filtro)", "👤 Persona de Espaldas", "Persona de Espaldas", "Sin Nombre")
 
             }
 

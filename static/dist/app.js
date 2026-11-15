@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * SmartGallery AI - Production Modular Bundle (Clean Code Architecture)
- * Generated: 2026-11-15 03:32:48
+ * Generated: 2026-11-15 09:11:07
  * Architecture: Decoupled Modules in static/js/modules/
  * ====================================================================
  */
@@ -1380,13 +1380,14 @@ async function filterTimeline(year) {
 
             sortedIdents.forEach(ident => {
                 const count = Array.isArray(subObj[ident]) ? subObj[ident].length : (typeof subObj[ident] === 'number' ? subObj[ident] : 0);
-                const isSpecial = ident.includes('Sin Rostro') || ident.includes('Vídeos') || ident.includes('Dudosos') || ident.includes('Desconocidos') || ident.includes('Pendientes');
+                const isSpecial = ident.includes('Sin Rostro') || ident.includes('Vídeos') || ident.includes('Dudosos') || ident.includes('Desconocidos') || ident.includes('Pendientes') || ident.includes('Espaldas');
                 let displayIcon = '';
 
                 if (ident.includes('Sin Rostro')) displayIcon = '📷';
                 else if (ident.includes('Vídeos')) displayIcon = '🎬';
                 else if (ident.includes('Dudosos')) displayIcon = '⚠️';
                 else if (ident.includes('Desconocidos')) displayIcon = '❓';
+                else if (ident.includes('Espaldas')) displayIcon = '👤';
                 else if (ident.includes('Persona Nueva')) displayIcon = '👤';
 
                 const identEl = document.createElement('div');
@@ -2318,6 +2319,8 @@ async function purgeExactDuplicates() {
                 ident.includes('Pendientes de Organizar') ||
                 ident.includes('Vídeos Sin Rostro') ||
                 ident.includes('Fotos Sin Rostro') ||
+                ident.includes('Personas de Espaldas') ||
+                ident.includes('Espaldas') ||
                 ident === 'Favoritos' ||
                 ident === 'Papelera'
             );
@@ -3485,6 +3488,7 @@ async function openLightbox(item) {
                 currentIdent.includes('Sin Rostro') ||
                 currentIdent.includes('Caras Aisladas') ||
                 currentIdent.includes('Pendiente') ||
+                currentIdent.includes('Espaldas') ||
                 (currentCat && (currentCat.includes('Revisión') || currentCat.includes('Organizar')));
             const isPerson = (!isSystemFolder && typeof isPersonAlbum === 'function') ? isPersonAlbum(currentCat, currentIdent) : false;
             const hasManualEdit = Boolean(

@@ -773,13 +773,14 @@ async function filterTimeline(year) {
 
             sortedIdents.forEach(ident => {
                 const count = Array.isArray(subObj[ident]) ? subObj[ident].length : (typeof subObj[ident] === 'number' ? subObj[ident] : 0);
-                const isSpecial = ident.includes('Sin Rostro') || ident.includes('Vídeos') || ident.includes('Dudosos') || ident.includes('Desconocidos') || ident.includes('Pendientes');
+                const isSpecial = ident.includes('Sin Rostro') || ident.includes('Vídeos') || ident.includes('Dudosos') || ident.includes('Desconocidos') || ident.includes('Pendientes') || ident.includes('Espaldas');
                 let displayIcon = '';
 
                 if (ident.includes('Sin Rostro')) displayIcon = '📷';
                 else if (ident.includes('Vídeos')) displayIcon = '🎬';
                 else if (ident.includes('Dudosos')) displayIcon = '⚠️';
                 else if (ident.includes('Desconocidos')) displayIcon = '❓';
+                else if (ident.includes('Espaldas')) displayIcon = '👤';
                 else if (ident.includes('Persona Nueva')) displayIcon = '👤';
 
                 const identEl = document.createElement('div');

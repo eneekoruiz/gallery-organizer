@@ -177,3 +177,22 @@ def api_video_indexer_status_route():
 @api_faces_bp.route('/video_indexer/pause', methods=['POST'])
 def api_video_indexer_pause_route():
     return api_video_indexer_pause()
+
+@api_faces_bp.route('/classify_back_turned', methods=['POST'])
+def api_classify_back_turned_route():
+    data = request.get_json(silent=True) or {}
+    dry_run = bool(data.get('dry_run', False))
+    limit = data.get('limit')
+    if limit is not None:
+        try:
+            limit = int(limit)
+        except Exception:
+            limit = None
+    conf = float(data.get('confidence', 0.28))
+
+    try:
+        from scripts.classify_personas_de_espaldas import classify_back_turned_photos
+        stats = classify_back_turned_photos(dry_run=dry_run, max_photos=limit, conf_thresh=conf)
+        return jsonify({"status": "ok", "stats": stats})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500

@@ -392,6 +392,7 @@ async function openLightbox(item) {
                 currentIdent.includes('Sin Rostro') ||
                 currentIdent.includes('Caras Aisladas') ||
                 currentIdent.includes('Pendiente') ||
+                currentIdent.includes('Espaldas') ||
                 (currentCat && (currentCat.includes('Revisión') || currentCat.includes('Organizar')));
             const isPerson = (!isSystemFolder && typeof isPersonAlbum === 'function') ? isPersonAlbum(currentCat, currentIdent) : false;
             const hasManualEdit = Boolean(
