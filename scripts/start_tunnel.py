@@ -19,10 +19,10 @@ os.makedirs("scratch", exist_ok=True)
 subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
 time.sleep(1)
 
-# 2. Iniciar cloudflared redirigiendo a archivo de log
+# 2. Iniciar cloudflared redirigiendo a archivo de log con protocolo http2 estable
 with open(OUTPUT_FILE, "w", encoding="utf-8") as log_fp:
     proc = subprocess.Popen(
-        [CLOUDFLARED_EXE, "tunnel", "--url", "http://127.0.0.1:5000"],
+        [CLOUDFLARED_EXE, "tunnel", "--protocol", "http2", "--url", "http://127.0.0.1:5000"],
         stdout=log_fp,
         stderr=subprocess.STDOUT,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | 0x00000008  # DETACHED_PROCESS
