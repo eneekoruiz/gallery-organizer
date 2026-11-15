@@ -51,6 +51,33 @@ def is_genuine_manual_override(ov_list):
     return False
 
 
+def is_valid_face_entry(f):
+    if not isinstance(f, dict):
+        return False
+    x = f.get('x')
+    y = f.get('y')
+    w = f.get('width')
+    h = f.get('height')
+    if (w is None or h is None) and f.get('box') and isinstance(f.get('box'), (list, tuple)) and len(f.get('box')) >= 4:
+        x = f['box'][0]
+        y = f['box'][1]
+        w = f['box'][2]
+        h = f['box'][3]
+    # Phantom feature embeddings from legacy imports lack coordinates
+    if 'feature' in f and (x is None or y is None):
+        return False
+    # Corrupt [0, 0, 0, 0] boxes
+    if x == 0 and y == 0 and (w == 0 or w is None) and (h == 0 or h is None) and ('confidence' not in f or f.get('confidence') == 0):
+        return False
+    try:
+        if w is not None and float(w) <= 0:
+            return False
+        if h is not None and float(h) <= 0:
+            return False
+    except (ValueError, TypeError):
+        return False
+    return True
+
 
 def api_identities():
     return jsonify(get_all_identities())
@@ -297,11 +324,12 @@ def get_gallery(force_reload=False):
             label = " + ".join(labels)
             
             if is_smart_album_folder:
-                faces_in_file = faces_cache.get(get_file_key(abs_p), [])
+                raw_faces = faces_cache.get(get_file_key(abs_p), [])
                 if file_key in overrides:
-                    faces_in_file = overrides[file_key]
+                    raw_faces = overrides[file_key]
+                faces_in_file = [f for f in raw_faces if is_valid_face_entry(f)]
                 ids_in_file = [f_e.get('identity') for f_e in faces_in_file if f_e.get('identity')]
-                num_f = len(ids_in_file) if ids_in_file else len(faces_cache.get(get_file_key(abs_p), []))
+                num_f = len(ids_in_file) if ids_in_file else len(faces_in_file)
                 has_yo_flag = ('YO' in ids_in_file)
                 item_sa = {
                     "path": abs_p,
@@ -328,11 +356,12 @@ def get_gallery(force_reload=False):
                 if label not in existing["source"]:
                     existing["source"] = f"{existing['source']} + {label}"
             else:
-                faces_in_file = faces_cache.get(get_file_key(abs_p), [])
-                if not faces_in_file:
-                    faces_in_file = faces_cache.get(abs_p, []) or fc_by_basename.get(file_name.lower(), [])
+                raw_faces = faces_cache.get(get_file_key(abs_p), [])
+                if not raw_faces:
+                    raw_faces = faces_cache.get(abs_p, []) or fc_by_basename.get(file_name.lower(), [])
                 if file_key in overrides:
-                    faces_in_file = overrides[file_key]
+                    raw_faces = overrides[file_key]
+                faces_in_file = [f for f in raw_faces if is_valid_face_entry(f)]
                     
                 ids_in_file = [f_e.get('identity') for f_e in faces_in_file if f_e.get('identity')]
                 num_f = len(ids_in_file) if len(ids_in_file) > 0 else len(faces_in_file)
@@ -386,7 +415,7 @@ def get_gallery(force_reload=False):
                     "orig_width": dim_cache.get(get_file_key(abs_p), [0, 0])[0],
                     "orig_height": dim_cache.get(get_file_key(abs_p), [0, 0])[1],
                     "quality_score": qual_cache.get(get_file_key(abs_p), 100.0),
-                    "faces": [{"box": f_e.get("box") or [f_e.get("x", 0), f_e.get("y", 0), f_e.get("width", 0), f_e.get("height", 0)], "identity": f_e.get("identity", "Desconocido"), "confidence": f_e.get("confidence", f_e.get("score", 0))} for f_e in faces_in_file]
+                    "faces": [{"box": f_e.get("box") or [f_e.get("x", 0), f_e.get("y", 0), f_e.get("width", 0), f_e.get("height", 0)], "identity": f_e.get("identity", "Desconocido"), "confidence": f_e.get("confidence", f_e.get("score", 0)), "x": f_e.get("x", 0), "y": f_e.get("y", 0), "width": f_e.get("width", 0), "height": f_e.get("height", 0), "is_manual": f_e.get("is_manual", False)} for f_e in faces_in_file if is_valid_face_entry(f_e)]
                 }
                 seen_files[key] = item
         except Exception:
@@ -625,6 +654,12 @@ def get_gallery(force_reload=False):
                     other_cat = "📋 Revisión / Por Organizar"
                     clean_other_id = "👤 Personas de Espaldas"
                 else:
+                    # Sibling & family isolation guard:
+                    # If this photo is in a single-person family folder (e.g. F. Uxue) and has only 1 face,
+                    # never cross-attribute it to 'YO'
+                    if other_id == 'YO' and (str(ident).startswith('F. ') or 'Familia' in str(cat)):
+                        if len(faces_in_file) <= 1:
+                            continue
                     other_cat = ident_to_cat_map.get(other_id)
                     if not other_cat:
                         if other_id.startswith('C. '): other_cat = 'Conocidos'
@@ -642,7 +677,8 @@ def get_gallery(force_reload=False):
         if cat != '__smart_album__':
             continue
         file_k = get_file_key(item['path'])
-        faces_in_file = overrides.get(file_k) or faces_cache.get(file_k) or faces_cache.get(item['path'], [])
+        raw_faces = overrides.get(file_k) or faces_cache.get(file_k) or faces_cache.get(item['path'], [])
+        faces_in_file = [f for f in raw_faces if is_valid_face_entry(f)]
         albums = group_albums(faces_in_file, ident_to_cat_map)
         identities, unresolved = trusted_identities(faces_in_file, ident_to_cat_map)
         for group_cat, group_ident in albums:

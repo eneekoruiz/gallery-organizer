@@ -1323,10 +1323,9 @@ async function runAnalysis(force=false) {
 
             // Determinar si hay sugerencia IA para mostrar en la tarjeta (con exclusión mutua estricta)
 
-            const isGroupOrCategory = isInvalidFolderName(folderName) || !Boolean(folderName.match(/^[CFPM]\.?\s+/i) || folderName === 'YO' || (typeof identitiesList !== 'undefined' && identitiesList.some(id => id.identidad === folderName)));
+            const isGroupOrCategory = (typeof isInvalidFolderName === 'function' ? isInvalidFolderName(folderName) : false) ||
+                !Boolean(folderName && (folderName.match(/^[CFPM]\.?\s+/i) || folderName === 'YO' || (typeof identitiesList !== 'undefined' && identitiesList.some(id => id.identidad === folderName))));
             const cleanFaceId = face.identity ? face.identity.replace(/^\?\s*/, '').trim() : '';
-            let isAlbumOwner = !isGroupOrCategory && (face.identity === folderName || face.tag_type === 'album_owner' || (cleanFaceId === folderName && !ownerClaimedOnOtherFace));
-            let isDoubtfulOwner = !isGroupOrCategory && (face.identity && face.identity.startsWith('? ') && face.identity.replace(/^\?\s*/, '').trim() === folderName);
             const otherClaimedInCard = new Set();
             let ownerClaimedOnOtherFace = false;
 
@@ -1361,6 +1360,9 @@ async function runAnalysis(force=false) {
                     }
                 });
             }
+
+            let isAlbumOwner = !isGroupOrCategory && !ownerClaimedOnOtherFace && (face.identity === folderName || face.tag_type === 'album_owner' || cleanFaceId === folderName);
+            let isDoubtfulOwner = !isGroupOrCategory && !ownerClaimedOnOtherFace && Boolean(face.identity && face.identity.startsWith('? ') && face.identity.replace(/^\?\s*/, '').trim() === folderName);
 
             // Si el dueño del álbum ya está identificado en otra cara de la misma foto, esta cara no es el dueño
 
