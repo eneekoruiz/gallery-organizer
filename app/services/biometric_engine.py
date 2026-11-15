@@ -7,14 +7,14 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-# Modelo 3D canónico simplificado (puntos antropométricos faciales en mm)
+# Modelo 3D canónico simplificado (puntos antropométricos faciales en mm en coordenadas de cámara OpenCV: X der, Y abajo, Z adelante)
 # Ojo Der, Ojo Izq, Punta Nariz, Comisura Boca Der, Comisura Boca Izq
 CANONICAL_FACE_3D = np.array([
-    [-34.0,  32.0, -18.0],  # Right eye
-    [ 34.0,  32.0, -18.0],  # Left eye
+    [-34.0, -32.0, -18.0],  # Right eye (subject's right, x < 0, y above nose)
+    [ 34.0, -32.0, -18.0],  # Left eye (subject's left, x > 0, y above nose)
     [  0.0,   0.0,   0.0],  # Nose tip
-    [-24.0, -38.0, -14.0],  # Right mouth corner
-    [ 24.0, -38.0, -14.0]   # Left mouth corner
+    [-24.0,  38.0, -14.0],  # Right mouth corner (y below nose)
+    [ 24.0,  38.0, -14.0]   # Left mouth corner (y below nose)
 ], dtype=np.float64)
 
 

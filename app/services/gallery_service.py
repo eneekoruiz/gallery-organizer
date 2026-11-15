@@ -662,7 +662,7 @@ def get_gallery(force_reload=False):
         for p_str, info in apple_db.items():
             if not info or info.get('deleted_locally'):
                 continue
-            if info.get('cloud_source') == 'icloud' or 'icloud photos' in str(p_str).lower():
+            if info.get('cloud_source') == 'icloud' or 'icloud photos' in str(p_str).lower() or bool(info.get('original_icloud_path')) or 'espalda' in str(info.get('identity', '')).lower() or 'espalda' in str(p_str).lower():
                 fname = os.path.basename(p_str)
                 cat = info.get('category', '📋 Revisión / Por Organizar')
                 ident = info.get('identity', '❓ Desconocidos (Por Identificar)')
@@ -851,6 +851,9 @@ def get_gallery(force_reload=False):
                         elif f_clean.startswith('P. '):
                             f_cat = 'Profesores'
                         elif f_clean.startswith('Persona Nueva') or 'persona nueva' in f_clean.lower() or 'persona #' in f_clean.lower():
+                            is_known_photo = bool(canonical_cat in ('Conocidos', 'Familia', 'YO', 'Profesores', 'Mascotas'))
+                            if is_known_photo or cat == '📋 Revisión / Por Organizar':
+                                continue  # Nunca crear un álbum de Persona Nueva secundario si la foto pertenece a un conocido o a revisión
                             f_cat = 'Personas Sin Nombre'
                             f_clean_sanitized = f_clean.replace('👤', '').strip()
                         else:

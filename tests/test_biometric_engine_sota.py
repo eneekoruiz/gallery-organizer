@@ -54,8 +54,8 @@ class BiometricEngineSOTATests(unittest.TestCase):
         self.assertIn("pitch", res)
         self.assertIn("roll", res)
         self.assertIn("iod", res)
-        self.assertGreaterEqual(res["quality_score"], 0.0)
-        self.assertLessEqual(res["quality_score"], 1.0)
+        self.assertGreaterEqual(res["quality_score"], 0.45)
+        self.assertTrue(res["is_usable_for_clustering"])
         self.assertEqual(res["iod"], 40.0)
 
     def test_fiqa_rejects_micro_faces(self):

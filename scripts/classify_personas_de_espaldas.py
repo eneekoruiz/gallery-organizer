@@ -18,7 +18,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from app.globals import FOTOS_DIR, RESULTADOS_DIR, APPLE_DB_PATH
+from app.globals import FOTOS_DIR, RESULTADOS_DIR
+APPLE_DB_PATH = ROOT_DIR / "apple_db.json"
 from app.services.pet_service import detect_pets_and_bodies
 from app.utils.file_ops import safe_move_file
 
@@ -132,6 +133,10 @@ def classify_back_turned_photos(dry_run: bool = False, max_photos: int = None, c
                         # Reemplazar o añadir entrada de cuerpo
                         info["faces"] = [body_face_entry]
                         info["faces_count"] = len(info["faces"])
+                        dst_p = espaldas_dir / Path(p_str).name
+                        if os.path.exists(p_str) and Path(p_str).resolve() != dst_p.resolve():
+                            safe_move_file(str(p_str), str(dst_p))
+                            info["path"] = str(dst_p)
                         updated_apple_db = True
 
                     stats["classified_espaldas"] += 1
