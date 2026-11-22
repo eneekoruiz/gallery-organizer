@@ -1,37 +1,41 @@
 # Gallery Organizer
 
-Aplicación web local para indexar, organizar y explorar colecciones de fotografías y vídeos personales.
+Local photo and video management application with EXIF metadata parsing, face detection, and embedding-based clustering.
 
-## Características
+## Tech Stack
 
-- Extracción automática de metadatos EXIF (fecha, cámara, dimensiones) con `exifread` y `pillow`.
-- Soporte para formatos HEIC/HEIF mediante `pillow-heif`.
-- Detección de imágenes duplicadas mediante hashes visuales y análisis de contenido.
-- Agrupación visual y detección de rostros con OpenCV y Scikit-Learn.
-- Papelera segura local integrada con `send2trash`.
-- Interfaz web servida mediante FastAPI / Jinja2 con soporte de tareas en segundo plano (APScheduler).
+- **Backend:** Python 3.10+, FastAPI, Uvicorn, Flask (legacy modules)
+- **Computer Vision:** OpenCV (`opencv-python-headless`), YuNet face detector, SFace face recognizer
+- **Image Processing:** Pillow, `pillow-heif` (HEIC/HEIF Apple formats), NumPy
+- **Validation:** Pydantic
 
-## Stack técnico
+## Architecture & Key Decisions
 
-- **Backend:** Python 3, FastAPI, Uvicorn, SQLAlchemy.
-- **Procesamiento de imagen:** OpenCV, Pillow, Scikit-Learn, NumPy.
-- **Frontend:** HTML5, CSS y plantillas Jinja2.
+- **Local-First Indexing:** Scans local filesystem directories, extracts EXIF/XMP timestamps and GPS coordinates, and caches metadata in SQLite.
+- **Face Clustering:** Uses OpenCV YuNet for face detection combined with SFace 128-D embedding vectors to group recurring individuals without sending data to external APIs.
+- **Format Compatibility:** Translates HEIC/HEIF images and video containers into browser-compatible previews on demand.
 
-## Instalación y ejecución
+## Local Setup
 
-1. Crear y activar entorno virtual:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # En Windows: .\venv\Scripts\activate
-   ```
+### Prerequisites
 
-2. Instalar dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
+- Python 3.10+
+- `libheif` support (installed automatically via `pillow-heif`)
 
-3. Iniciar la aplicación:
-   ```bash
-   uvicorn app_fastapi:app --reload --port 8000
-   ```
-   O ejecutar en Windows el script lanzador `Iniciar_SmartGallery.bat`.
+### Installation & Run
+
+```bash
+# Clone and enter directory
+git clone https://github.com/eneekoruiz/gallery-organizer.git
+cd gallery-organizer
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start FastAPI server
+uvicorn app_fastapi:app --host 127.0.0.1 --port 8000 --reload
+```
